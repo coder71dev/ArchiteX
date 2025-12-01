@@ -1,0 +1,5 @@
+{
+  "name": "ArchiteX",
+  "description": "An AI-powered System Architect that generates visual infrastructure diagrams, technical specifications, and simulates chaos engineering scenarios for reliability testing.",
+  "requestFramePermissions": []
+}
