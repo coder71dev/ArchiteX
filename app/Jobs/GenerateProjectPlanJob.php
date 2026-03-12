@@ -64,8 +64,10 @@ class GenerateProjectPlanJob implements ShouldQueue
                 $project->update(['title' => $blueprintData['title'] ?? $project->title]);
             }
 
-            if (!$project->conversation_id) {
-                $project->update(['conversation_id' => $blueprintAgent->currentConversation()]);
+            // The SDK sets conversation_id on the response (not on the agent when using forUser())
+            if (!$project->conversation_id && $blueprintResponse->conversationId) {
+                $project->update(['conversation_id' => $blueprintResponse->conversationId]);
+                $project->refresh(); // ensure conversation_id is available for subsequent agents
             }
 
             $newVersion = ($project->blueprints()->max('version') ?? 0) + 1;
@@ -105,9 +107,13 @@ class GenerateProjectPlanJob implements ShouldQueue
             $proposalResponse = $proposalAgent->prompt($proposalPrompt);
             $proposalData = $proposalResponse->structured;
             
-            $project->proposals()->create(array_merge($proposalData ?? [], [
-                'version' => $newVersion,
-            ]));
+            $project->proposals()->create([
+                'version'              => $newVersion,
+                'content'              => $proposalData['content'] ?? 'Proposal content not available.',
+                'executive_summary'    => $proposalData['executive_summary'] ?? null,
+                'technical_challenges' => $proposalData['technical_challenges'] ?? [],
+                'tone'                 => 'formal',
+            ]);
 
             // --- PHASE 4: TASKS ---
             $project->update(['current_phase' => 'tasks']);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import { 
     ChevronRight, MessageSquare, Send, Zap, Clock, 
     Layers, FileText, CheckSquare, Users, 
@@ -78,10 +78,21 @@ export default function Show({ project, team }: ProjectProps) {
         });
     };
 
-    const blueprint = project.blueprints[project.blueprints.length - 1] || {};
-    const estimate = project.estimates[project.estimates.length - 1] || {};
-    const proposal = project.proposals[project.proposals.length - 1] || {};
+    const blueprint = project.blueprints[0] || {};
+    const estimate = project.estimates[0] || {};
+    const proposal = project.proposals[0] || {};
     const tasks = project.tasks || [];
+
+    // Poll for updates if the AI is actively planning
+    useEffect(() => {
+        if (project.status === 'planning') {
+            const interval = setInterval(() => {
+                router.reload({ only: ['project'] });
+            }, 3000);
+            return () => clearInterval(interval);
+        }
+    }, [project.status]);
+    // ...
 
     return (
         <div className="min-h-screen bg-cyber-950 text-slate-200">
@@ -113,7 +124,7 @@ export default function Show({ project, team }: ProjectProps) {
                 </div>
             </div>
 
-            <div className="flex h-[calc(100-4rem)]">
+            <div className="flex h-[calc(100vh-4rem)]">
                 {/* Main Content Area */}
                 <div className="flex-1 overflow-y-auto p-8 lg:p-12">
                     {/* Navigation Tabs */}
@@ -140,7 +151,51 @@ export default function Show({ project, team }: ProjectProps) {
                         ))}
                     </nav>
 
-                    <div className="animate-fade-in">
+                    <div className="animate-fade-in text-slate-200">
+                        {project.status === 'planning' && (
+                            <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-8 py-20">
+                                <div className="relative">
+                                    <div className="w-24 h-24 rounded-full border-4 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" />
+                                    </div>
+                                </div>
+                                <div className="space-y-4 max-w-md">
+                                    <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-indigo-500 bg-clip-text text-transparent capitalize">
+                                        Architecting: {project.current_phase || 'Project'}
+                                    </h2>
+                                    <p className="text-slate-400 leading-relaxed">
+                                        The Neural Vault is orchestrating multi-agent simulations to generate your technical blueprint, resource estimates, and task breakdown.
+                                    </p>
+                                    <div className="flex items-center justify-center gap-4 pt-4">
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'blueprint' ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400' : 'bg-cyber-800 border-cyber-700 text-slate-600'}`}>Blueprint</div>
+                                        <div className="w-4 h-[1px] bg-cyber-700" />
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'estimation' ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400' : 'bg-cyber-800 border-cyber-700 text-slate-600'}`}>Estimation</div>
+                                        <div className="w-4 h-[1px] bg-cyber-700" />
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'proposal' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-cyber-800 border-cyber-700 text-slate-600'}`}>Proposal</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {project.error_message && project.status !== 'planning' && (
+                            <div className="card border-rose-500/50 bg-rose-500/5 p-8 text-center space-y-4">
+                                <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+                                    <Zap className="w-8 h-8 text-rose-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-rose-500">Neural Sync Interrupted</h3>
+                                <p className="text-slate-400 max-w-lg mx-auto">{project.error_message}</p>
+                                <button 
+                                    onClick={() => router.post(route('projects.chat', project.id), { message: 'Retry the previous plan generation.' })}
+                                    className="btn-primary bg-rose-500 hover:bg-rose-600 mt-4"
+                                >
+                                    Force Retry Generation
+                                </button>
+                            </div>
+                        )}
+
+                        {project.status !== 'planning' && !project.error_message && (
+                            <>
                         {/* Blueprint Tab */}
                         {activeTab === 'blueprint' && (
                             <div className="space-y-12">
@@ -364,6 +419,8 @@ export default function Show({ project, team }: ProjectProps) {
                                 ))}
                             </div>
                         )}
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -434,19 +491,3 @@ export default function Show({ project, team }: ProjectProps) {
         </div>
     );
 }
-
-// Helper Link component
-const Link = ({ href, children, ...props }: any) => {
-    return (
-        <a 
-            href={href} 
-            onClick={(e) => {
-                e.preventDefault();
-                router.visit(href);
-            }} 
-            {...props}
-        >
-            {children}
-        </a>
-    );
-};

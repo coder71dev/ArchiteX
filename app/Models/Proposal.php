@@ -12,6 +12,7 @@ class Proposal extends Model
         'project_id',
         'version',
         'content',
+        'executive_summary',
         'technical_challenges',
         'tone',
     ];

@@ -13,6 +13,8 @@ use Stringable;
 class BlueprintAgent implements Agent, Conversational, HasStructuredOutput
 {
     use Promptable, RemembersConversations;
+
+    protected string $model = 'gemini-1.5-flash-latest';
     
     /**
      * Get the timeout for the agent prompt.

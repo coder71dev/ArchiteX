@@ -14,11 +14,18 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Fix SSL locally without needing admin rights
+        if (app()->environment('local')) {
+            $cert = base_path('cacert.pem');
+            putenv('CURL_CA_BUNDLE=' . $cert);
+            putenv('SSL_CERT_FILE=' . $cert);
+
+            // Force Laravel's Http client to use the certificate
+            \Illuminate\Support\Facades\Http::globalOptions([
+                'verify' => $cert,
+            ]);
+        }
     }
 }
