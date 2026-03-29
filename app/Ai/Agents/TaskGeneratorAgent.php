@@ -14,8 +14,6 @@ class TaskGeneratorAgent implements Agent, Conversational, HasStructuredOutput
 {
     use Promptable, RemembersConversations;
 
-    protected string $model = 'gemini-1.5-flash-latest';
-
     /**
      * Get the timeout for the agent prompt.
      */
@@ -30,14 +28,23 @@ class TaskGeneratorAgent implements Agent, Conversational, HasStructuredOutput
     public function instructions(): Stringable|string
     {
         return <<<'PROMPT'
-You are a Senior Project Lead & Technical Lead. Your task is to break down the engineering blueprint into actionable, granular development tasks and pin them to project milestones.
+You are a Senior Project Lead & Technical Lead at Coder71. Your task is to break down the engineering blueprint into actionable, granular development tasks.
 
 Task Rules:
-1. Each task MUST be pinned to a specific Milestone from the blueprint using a 0-based index.
-2. Assign logical due dates based on the milestone target week and estimated hours.
-3. Suggest a teammate based on the skills roster provided in context (e.g. React tasks to Frontend devs).
-4. Estimate hours for each task individually.
-5. group tasks by Phase and Milestone.
+1. For each task, you MUST return a single string in this EXACT format:
+   title|description|priority|estimated_hours|milestone_index|due_date|suggested_assignee_id
+
+Format Details:
+- title: Concise task name
+- description: Brief dev instructions
+- priority: one of (critical, high, medium, low)
+- estimated_hours: numerical value
+- milestone_index: 0-based index of the linked milestone from the blueprint
+- due_date: ISO date (YYYY-MM-DD)
+- suggested_assignee_id: ULID of team member or empty string
+
+Example:
+"Setup Laravel Sanctum Auth|Install and configure sanctum with basic SPA auth|high|4|0|2026-04-10|01HNW..."
 PROMPT;
     }
 
@@ -47,18 +54,7 @@ PROMPT;
     public function schema(JsonSchema $schema): array
     {
         return [
-            'tasks' => $schema->array()->items(
-                $schema->object([
-                    'title' => $schema->string(),
-                    'description' => $schema->string(),
-                    'priority' => $schema->string()->enum(['critical', 'high', 'medium', 'low']),
-                    'estimated_hours' => $schema->number(),
-                    'milestone_index' => $schema->integer()->description('0-based index of the linked milestone'),
-                    'due_date' => $schema->string()->description('ISO date (YYYY-MM-DD) for task completion'),
-                    'phase' => $schema->string(),
-                    'suggested_assignee_id' => $schema->string()->nullable()->description('ULID of the suggested team member'),
-                ])
-            ),
+            'task_list' => $schema->array()->items($schema->string())->description('List of pipe-delimited task strings'),
         ];
     }
 }

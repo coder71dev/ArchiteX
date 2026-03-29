@@ -88,7 +88,7 @@ export default function Show({ project, team }: ProjectProps) {
         if (project.status === 'planning') {
             const interval = setInterval(() => {
                 router.reload({ only: ['project'] });
-            }, 3000);
+            }, 7000);
             return () => clearInterval(interval);
         }
     }, [project.status]);
