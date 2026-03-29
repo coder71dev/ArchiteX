@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'gemini',
+    'default' => 'xai',
     'default_for_images' => 'gemini',
     'default_for_audio' => 'gemini',
     'default_for_transcription' => 'gemini',
@@ -33,7 +33,7 @@ return [
 
     'caching' => [
         'embeddings' => [
-            'cache' => false,
+            'cache' => true,
             'store' => env('CACHE_STORE', 'database'),
         ],
     ],

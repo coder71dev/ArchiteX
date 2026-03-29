@@ -167,6 +167,14 @@ export default function Show({ project, team }: ProjectProps) {
                                     <p className="text-slate-400 leading-relaxed">
                                         The Neural Vault is orchestrating multi-agent simulations to generate your technical blueprint, resource estimates, and task breakdown.
                                     </p>
+                                    
+                                    {project.latest_status_message && (
+                                        <div className="mt-6 flex items-center justify-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 text-xs font-bold animate-pulse">
+                                            <Zap className="w-3.5 h-3.5" />
+                                            {project.latest_status_message}
+                                        </div>
+                                    )}
+
                                     <div className="flex items-center justify-center gap-4 pt-4">
                                         <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'blueprint' ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400' : 'bg-cyber-800 border-cyber-700 text-slate-600'}`}>Blueprint</div>
                                         <div className="w-4 h-[1px] bg-cyber-700" />

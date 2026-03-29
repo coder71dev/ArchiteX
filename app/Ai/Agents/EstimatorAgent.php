@@ -2,27 +2,26 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Middleware\LogPrompts;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\Model;
+use Laravel\Ai\Attributes\Provider;
+use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
+use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class EstimatorAgent implements Agent, Conversational, HasStructuredOutput
+#[Provider([Lab::Gemini, Lab::xAI, Lab::Groq])]
+#[Model('gemini-2.5-flash')]
+#[Timeout(120)]
+class EstimatorAgent implements Agent, Conversational, HasStructuredOutput, HasMiddleware
 {
     use Promptable, RemembersConversations;
-
-    protected string $model = 'gemini-1.5-flash-latest';
-
-    /**
-     * Get the timeout for the agent prompt.
-     */
-    public function timeout(): int
-    {
-        return 120;
-    }
 
     /**
      * Get the instructions that the agent should follow.
@@ -43,29 +42,39 @@ PROMPT;
     }
 
     /**
+     * Get the agent's middleware.
+     */
+    public function middleware(): array
+    {
+        return [
+            new LogPrompts,
+        ];
+    }
+
+    /**
      * Get the agent's structured output schema definition.
      */
     public function schema(JsonSchema $schema): array
     {
         return [
-            'total_hours' => $schema->integer()->description('Total estimated development hours'),
-            'duration_weeks' => $schema->integer()->description('Calendar weeks estimated for completion'),
+            'total_hours' => $schema->integer()->description('Total estimated development hours')->required(),
+            'duration_weeks' => $schema->integer()->description('Calendar weeks estimated for completion')->required(),
             'team_composition' => $schema->array()->items(
                 $schema->object([
-                    'role' => $schema->string(),
-                    'count' => $schema->integer(),
-                    'hours_per_day' => $schema->integer(),
+                    'role' => $schema->string()->required(),
+                    'count' => $schema->integer()->required(),
+                    'hours_per_day' => $schema->integer()->required(),
                 ])
-            ),
+            )->required(),
             'phase_breakdown' => $schema->array()->items(
                 $schema->object([
-                    'phase' => $schema->string(),
-                    'hours' => $schema->integer(),
-                    'team' => $schema->array()->items($schema->string()),
+                    'phase' => $schema->string()->required(),
+                    'hours' => $schema->integer()->required(),
+                    'team' => $schema->array()->items($schema->string())->required(),
                 ])
-            ),
-            'assumptions' => $schema->array()->items($schema->string())->description('Key assumptions made for these estimates'),
-            'risk_buffer_percent' => $schema->integer()->description('Suggested risk buffer percentage'),
+            )->required(),
+            'assumptions' => $schema->array()->items($schema->string())->description('Key assumptions made for these estimates')->required(),
+            'risk_buffer_percent' => $schema->integer()->description('Suggested risk buffer percentage')->required(),
         ];
     }
 }

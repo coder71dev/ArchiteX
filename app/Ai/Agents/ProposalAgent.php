@@ -2,25 +2,26 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Middleware\LogPrompts;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\Model;
+use Laravel\Ai\Attributes\Provider;
+use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
+use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class ProposalAgent implements Agent, Conversational, HasStructuredOutput
+#[Provider([Lab::Gemini, Lab::xAI, Lab::Groq])]
+#[Model('gemini-2.5-flash')]
+#[Timeout(120)]
+class ProposalAgent implements Agent, Conversational, HasStructuredOutput, HasMiddleware
 {
     use Promptable, RemembersConversations;
-
-    /**
-     * Get the timeout for the agent prompt.
-     */
-    public function timeout(): int
-    {
-        return 120;
-    }
 
     /**
      * Get the instructions that the agent should follow.
@@ -39,20 +40,30 @@ PROMPT;
     }
 
     /**
+     * Get the agent's middleware.
+     */
+    public function middleware(): array
+    {
+        return [
+            new LogPrompts,
+        ];
+    }
+
+    /**
      * Get the agent's structured output schema definition.
      */
     public function schema(JsonSchema $schema): array
     {
         return [
-            'content' => $schema->string()->description('The full proposal content in Markdown'),
-            'executive_summary' => $schema->string()->description('A short summary for the MD/Clients'),
+            'content' => $schema->string()->description('The full proposal content in Markdown')->required(),
+            'executive_summary' => $schema->string()->description('A short summary for the MD/Clients')->required(),
             'technical_challenges' => $schema->array()->items(
                 $schema->object([
-                    'challenge' => $schema->string(),
-                    'mitigation' => $schema->string(),
-                    'impact' => $schema->string()->enum(['high', 'medium', 'low']),
+                    'challenge' => $schema->string()->required(),
+                    'mitigation' => $schema->string()->required(),
+                    'impact' => $schema->string()->enum(['high', 'medium', 'low'])->required(),
                 ])
-            ),
+            )->required(),
         ];
     }
 }
