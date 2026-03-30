@@ -212,7 +212,7 @@ export default function Dashboard({ projects }: Props) {
                                 <span className="text-3xl font-bold text-white tracking-tight">{projects.length}</span>
                             </div>
                             <div className="h-1.5 bg-[#1a1523] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#F93A8B] rounded-full w-2/3 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
+                                <div className="h-full bg-[#F93A8B] rounded-full w-2/3 shadow-[0_0_10px_rgba(249,58,139,0.5)]"></div>
                             </div>
                         </div>
 

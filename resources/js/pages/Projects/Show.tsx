@@ -300,7 +300,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                 <Download className="w-4 h-4" />
                                 Export PDF
                             </button>
-                            <div className="w-12 h-12 rounded-full bg-[#0f0c13] flex items-center justify-center border-2 border-white shadow-xl shadow-slate-200 overflow-hidden">
+                            <div className="w-12 h-12 rounded-full bg-[#0f0c13] flex items-center justify-center border-2 border-white shadow-xl shadow-[#000]/20 overflow-hidden">
                                 <Users className="w-5 h-5 text-[#F93A8B]" />
                             </div>
                     </div>
@@ -361,11 +361,11 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                     )}
 
                                     <div className="flex items-center justify-center gap-4 pt-4">
-                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'blueprint' ? 'bg-[#F93A8B]/10 border-indigo-200 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Blueprint</div>
-                                        <div className="w-4 h-[1px] bg-slate-200" />
-                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'estimation' ? 'bg-[#F93A8B]/10 border-indigo-200 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Estimation</div>
-                                        <div className="w-4 h-[1px] bg-slate-200" />
-                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'proposal' ? 'bg-[#F93A8B]/10 border-indigo-200 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Proposal</div>
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'blueprint' ? 'bg-[#F93A8B]/10 border-[#F93A8B]/20 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Blueprint</div>
+                                        <div className="w-4 h-[1px] bg-[#261E2E]" />
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'estimation' ? 'bg-[#F93A8B]/10 border-[#F93A8B]/20 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Estimation</div>
+                                        <div className="w-4 h-[1px] bg-[#261E2E]" />
+                                        <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${project.current_phase === 'proposal' ? 'bg-[#F93A8B]/10 border-[#F93A8B]/20 text-[#F93A8B]' : 'bg-[#1a1523] border-[#261E2E] text-zinc-600'}`}>Proposal</div>
                                     </div>
                                 </div>
                             </div>
@@ -400,7 +400,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                             <Sparkles className="w-3 h-3" />
                                             PRD: ORIGINAL MISSION BRIEF
                                         </h4>
-                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-4 border-l-2 border-indigo-200 pl-4 py-1">
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-4 border-l-2 border-[#F93A8B]/20 pl-4 py-1">
                                             <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-p:text-zinc-500 prose-p:italic">
                                                 <ReactMarkdown>
                                                     {project.brief}
@@ -551,7 +551,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                             <span className="text-xl font-black text-white uppercase italic mb-6 block">{stack.category}</span>
                                                             <div className="flex flex-wrap gap-2.5">
                                                                 {stack.items.map((item: string, j: number) => (
-                                                                    <span key={j} className="px-4 py-2 bg-[#F93A8B]/10 text-indigo-700 rounded-xl text-[10px] font-black border border-[#F93A8B]/20 uppercase tracking-widest italic shadow-sm hover:bg-[#15121a] transition-all">
+                                                                    <span key={j} className="px-4 py-2 bg-[#F93A8B]/10 text-[#F93A8B] rounded-xl text-[10px] font-black border border-[#F93A8B]/20 uppercase tracking-widest italic shadow-sm hover:bg-[#15121a] transition-all">
                                                                         {item}
                                                                     </span>
                                                                 ))}
@@ -608,7 +608,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                             <div className="space-y-10">
                                 <header className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-950/50 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#F93A8B]/10 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Resource Commitment</span>
                                         <div className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-end gap-2">
                                             {estimate.total_hours}
@@ -637,7 +637,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                         <h3 className="font-bold text-lg">Resource Allocation</h3>
                                         <div className="space-y-4">
                                             {estimate.team_composition?.map((t: any, i: number) => (
-                                                <div key={i} className="flex items-center justify-between p-4 bg-cyber-900 rounded-xl border border-cyber-700">
+                                                <div key={i} className="flex items-center justify-between p-4 bg-[#1a1523] rounded-xl border border-[#261E2E]">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 rounded-lg bg-[#e73681]/10 text-[#F93A8B]/80 flex items-center justify-center font-bold">
                                                             {t.count}
@@ -820,7 +820,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                                                             <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border tracking-widest italic ${
                                                                                                 task.priority === 'critical' ? 'bg-rose-50 text-rose-600 border-rose-200' :
                                                                                                 task.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                                                                                'bg-[#F93A8B]/10 text-[#F93A8B] border-indigo-200'
+                                                                                                'bg-[#F93A8B]/10 text-[#F93A8B] border-[#F93A8B]/20'
                                                                                             }`}>
                                                                                                 {task.priority}
                                                                                             </span>
@@ -867,7 +867,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                     <div className="flex gap-4 relative z-10">
                                         {['todo', 'in_progress', 'review', 'done'].map(s => (
                                             <div key={s} className="px-6 py-3 bg-[#0f0c13] rounded-2xl text-[10px] uppercase font-black text-zinc-600 border border-[#261E2E] italic tracking-widest flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${s === 'done' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-[#F93A8B] animate-pulse' : 'bg-slate-300'}`} />
+                                                <div className={`w-2 h-2 rounded-full ${s === 'done' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-[#F93A8B] animate-pulse' : 'bg-zinc-700'}`} />
                                                 {s.replace('_', ' ')}: {tasks.filter((t:any) => t.status === s).length}
                                             </div>
                                         ))}
@@ -879,8 +879,8 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                         <div key={task.id} className="bg-[#15121a] p-10 rounded-[2.5rem] border border-[#261E2E] shadow-sm hover:shadow-2xl transition-all group flex items-start gap-10 active:scale-[0.99] relative overflow-hidden">
                                             <div className="absolute top-0 right-0 w-24 h-24 bg-[#0f0c13] rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
                                             <div className={`mt-2 h-4 w-4 rounded-full shrink-0 border-4 border-white shadow-xl ${
-                                                task.priority === 'critical' ? 'bg-rose-500 shadow-rose-200 animate-pulse' :
-                                                task.priority === 'high' ? 'bg-amber-500 shadow-amber-100' : 'bg-[#F93A8B] shadow-[#F93A8B]/20'
+                                                task.priority === 'critical' ? 'bg-rose-500 shadow-rose-950/20 animate-pulse' :
+                                                task.priority === 'high' ? 'bg-amber-500 shadow-amber-950/20' : 'bg-[#F93A8B] shadow-[#F93A8B]/20'
                                             }`} />
                                             
                                             <div className="flex-1 relative z-10">
@@ -896,10 +896,10 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                     <div className="text-2xl font-black text-white italic tracking-tighter">{task.estimated_hours}H</div>
                                                     <div className="text-[9px] text-zinc-600 uppercase font-black tracking-widest italic">Est. Committed</div>
                                                 </div>
-                                                <div className="w-16 h-16 rounded-3xl bg-[#0f0c13] border-2 border-white shadow-xl shadow-slate-200 flex items-center justify-center overflow-hidden group-hover:shadow-[#F93A8B]/20 transition-all" title={task.assignee?.name}>
+                                                <div className="w-16 h-16 rounded-3xl bg-[#0f0c13] border-2 border-white shadow-xl flex items-center justify-center overflow-hidden group-hover:shadow-[#F93A8B]/20 transition-all" title={task.assignee?.name}>
                                                     {task.assignee ? (
                                                         <span className="text-sm font-black text-[#F93A8B] italic uppercase">{task.assignee.name.split(' ').map((n:any) => n[0]).join('')}</span>
-                                                    ) : <Users className="w-6 h-6 text-slate-300" />}
+                                                    ) : <Users className="w-6 h-6 text-zinc-500" />}
                                                 </div>
                                             </div>
                                         </div>
@@ -968,7 +968,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                         <div className="flex flex-col items-end">
                             <div className="max-w-[95%] p-6 bg-[#000] text-white rounded-[2.5rem] rounded-tr-none shadow-2xl relative group transition-all">
                                 <div className="absolute -top-3 right-6 px-3 py-1 bg-[#F93A8B] text-[9px] font-black uppercase tracking-[0.3em] rounded-full text-white shadow-xl italic">Mission Blueprint</div>
-                                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed text-slate-200 font-bold italic prose-headings:text-white prose-strong:text-[#F93A8B]/80">
+                                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed text-zinc-200 font-bold italic prose-headings:text-white prose-strong:text-[#F93A8B]/80">
                                     <ReactMarkdown>{project.brief}</ReactMarkdown>
                                 </div>
                             </div>
@@ -981,6 +981,15 @@ export default function Show({ project, team, messages }: ProjectProps) {
                             let content = msg.content;
                             let isJson = false;
                             let parsedContent: any = null;
+
+                            let actionTitle = "System Request: Context Serialization";
+                            if (content.includes('Generate a technical proposal')) {
+                                actionTitle = "System Request: AI Blueprint Generation";
+                            } else if (content.includes('granular, assignable developer tasks')) {
+                                actionTitle = "System Request: Orchestrating Developer Units";
+                            } else if (content.includes('Neural Sync Retry')) {
+                                actionTitle = "System Request: Automatic Syntax Recovery";
+                            }
 
                             const isSystemAction = msg.role === 'user' && (
                                 content.includes('Based on the updated blueprint') || 
@@ -998,13 +1007,23 @@ export default function Show({ project, team, messages }: ProjectProps) {
 
                             if (isSystemAction) {
                                 return (
-                                    <div key={msg.id || index} className="flex flex-col items-center py-6 px-4">
+                                    <div key={msg.id || index} className="flex flex-col items-center py-6 px-4 w-full">
                                         <div className="flex items-center gap-4 w-full opacity-30">
-                                            <div className="flex-1 h-px bg-slate-300"></div>
-                                            <Zap className="w-4 h-4 text-amber-500" />
-                                            <div className="flex-1 h-px bg-slate-300"></div>
+                                            <div className="flex-1 h-px bg-[#261E2E]"></div>
+                                            <Zap className="w-4 h-4 text-[#F3B323]" />
+                                            <div className="flex-1 h-px bg-[#261E2E]"></div>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-3 italic">Autonomous Workflow Pulse</span>
+                                        <details className="group mt-4 w-full max-w-[95%]">
+                                            <summary className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 italic text-center cursor-pointer hover:text-[#F3B323] transition-colors list-none [&::-webkit-details-marker]:hidden flex justify-center items-center gap-2 select-none">
+                                                <span className="w-4 h-4 flex items-center justify-center rounded-full border border-zinc-800 group-open:border-[#F3B323]/50 group-open:bg-[#F3B323]/10 transition-colors">
+                                                    <span className="text-[8px] group-open:rotate-90 transition-transform duration-200">▶</span>
+                                                </span>
+                                                {actionTitle}
+                                            </summary>
+                                            <div className="mt-5 p-6 bg-[#0B090F] border border-[#261E2E] rounded-[2rem] text-[11px] text-zinc-400 font-mono shadow-inner max-h-[350px] overflow-y-auto whitespace-pre-wrap text-left custom-scrollbar leading-relaxed">
+                                                {content}
+                                            </div>
+                                        </details>
                                     </div>
                                 );
                             }
@@ -1036,7 +1055,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className={`prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#000] prose-pre:text-white prose-pre:rounded-2xl prose-pre:p-6 prose-p:font-bold prose-p:italic ${msg.role === 'user' ? 'prose-p:text-white' : 'text-zinc-400'}`}>
+                                            <div className={`prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#000] prose-pre:text-white prose-pre:rounded-2xl prose-pre:p-6 prose-p:font-bold prose-p:italic ${msg.role === 'user' ? 'prose-p:text-white' : 'text-zinc-400'}`}>
                                                 <ReactMarkdown>
                                                     {content}
                                                 </ReactMarkdown>
@@ -1080,7 +1099,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                         value={chatData.message}
                                         onChange={e => setChatData('message', e.target.value)}
                                         placeholder="DIRECTIVE: e.g. 'Integrate Redis Cache' or 'Scale Frontend Clusters'"
-                                        className="w-full bg-[#0f0c13] border-2 border-[#261E2E]/60 rounded-[2rem] pl-6 pr-16 py-5 text-sm focus:ring-4 focus:ring-[#e73681]/10 focus:border-[#F93A8B] outline-none transition-all resize-none placeholder:text-slate-300 min-h-[140px] font-bold italic leading-relaxed custom-scrollbar shadow-inner"
+                                        className="w-full bg-[#0f0c13] border-2 border-[#261E2E]/60 rounded-[2rem] pl-6 pr-16 py-5 text-sm focus:ring-4 focus:ring-[#e73681]/10 focus:border-[#F93A8B] outline-none transition-all resize-none placeholder:text-zinc-600 min-h-[140px] font-bold italic leading-relaxed custom-scrollbar shadow-inner"
                                         onKeyDown={e => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
@@ -1091,7 +1110,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                     <button 
                                         type="submit"
                                         disabled={chatProcessing || !chatData.message}
-                                        className="absolute right-4 bottom-4 w-12 h-12 rounded-2xl bg-[#F93A8B] text-white hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-zinc-600 transition-all shadow-xl shadow-[#F93A8B]/20 flex items-center justify-center active:scale-90"
+                                        className="absolute right-4 bottom-4 w-12 h-12 rounded-2xl bg-[#F93A8B] text-white hover:bg-[#c033d6] disabled:bg-[#1a1523] disabled:text-zinc-700 transition-all shadow-xl shadow-[#F93A8B]/20 flex items-center justify-center active:scale-90"
                                     >
                                         <Send className="w-5 h-5" />
                                     </button>
