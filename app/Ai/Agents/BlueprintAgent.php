@@ -53,7 +53,8 @@ CRITICAL ANALYSIS RULES:
 
 CRITICAL MERMAID GENERATION RULES:
 1. ALWAYS start the string with the diagram type (e.g., "graph TD", "erDiagram", "sequenceDiagram").
-2. For "graph TD":
+2. ALWAYS include a SPACE or NEWLINE after the diagram signature (e.g., "graph TD\nNodeID").
+3. For "graph TD":
    - Use ALWAYS quotes for node labels: NodeID["Label Text"].
    - Avoid special characters in NodeIDs (use alpha-numeric only).
    - Use <br/> for line breaks inside quotes. Do NOT use \n.

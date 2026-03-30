@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { 
     ChevronRight, MessageSquare, Send, Zap, Clock, 
     Layers, FileText, CheckSquare, Users, 
     Maximize2, Download, RefreshCcw, Sparkles,
-    ZoomIn, X, AlertCircle, Lightbulb, Shield
+    ZoomIn, X, AlertCircle, Lightbulb, Shield,
+    Calendar, Flag, Briefcase, ChevronDown, ChevronUp
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
 
 // Mermaid rendering component
-const Mermaid = ({ chart }: { chart: string }) => {
+const Mermaid = ({ chart, title = 'Blueprint' }: { chart: string, title?: string }) => {
     const [svg, setSvg] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showRaw, setShowRaw] = useState(false);
@@ -37,7 +39,18 @@ const Mermaid = ({ chart }: { chart: string }) => {
             if (!chart) return;
             try {
                 setError(null);
-                const { svg } = await mermaid.render(id, chart);
+                
+                // Safe Parser: Fix common AI Mermaid syntax mistakes
+                let processedChart = chart.trim();
+                
+                // Fix: any diagram type followed immediately by something else
+                const diagramTypes = ['graph TD', 'graph LR', 'erDiagram', 'sequenceDiagram', 'gantt', 'pie', 'classDiagram', 'stateDiagram'];
+                diagramTypes.forEach(type => {
+                    const regex = new RegExp(`^(${type})(?!\\s|\\n)`, 'i');
+                    processedChart = processedChart.replace(regex, `$1\n`);
+                });
+
+                const { svg } = await mermaid.render(id, processedChart);
                 setSvg(svg);
             } catch (err: any) {
                 console.error('Mermaid error:', err);
@@ -87,22 +100,50 @@ const Mermaid = ({ chart }: { chart: string }) => {
                 <div className="overflow-x-auto flex justify-center w-full mermaid-container" dangerouslySetInnerHTML={{ __html: svg }} />
             </div>
 
-            {/* Fullscreen Modal */}
-            {isFullscreen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-8 bg-cyber-950/90 backdrop-blur-xl transition-all animate-fade-in">
-                    <button 
-                        onClick={() => setIsFullscreen(false)}
-                        className="absolute top-6 right-6 p-3 rounded-full bg-cyber-900 border border-cyber-700 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
-                    <div className="w-full h-full flex items-center justify-center overflow-auto p-12 custom-scrollbar">
+            {/* Fullscreen Neural Modal */}
+            {isFullscreen && createPortal(
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-12 bg-cyber-950/98 backdrop-blur-3xl transition-all animate-fade-in select-none">
+                    {/* Control Bar */}
+                    <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-cyber-950 to-transparent flex items-center justify-between px-10 z-[100000]">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em]">Architectural View</span>
+                            <span className="text-xl font-bold text-slate-100 italic tracking-tight">{title}</span>
+                        </div>
+                        <button 
+                            onClick={() => setIsFullscreen(false)}
+                            className="p-3 rounded-xl bg-cyber-900 border border-cyber-700 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all flex items-center gap-3 group"
+                        >
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Disconnect View</span>
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="w-full h-full flex items-center justify-center overflow-auto p-12 lg:p-24 custom-scrollbar active:cursor-grabbing cursor-grab relative">
+                        <style dangerouslySetInnerHTML={{ __html: `
+                            .zoomable-blueprint svg { 
+                                max-width: none !important; 
+                                width: auto !important; 
+                                height: auto !important; 
+                            }
+                        ` }} />
                         <div 
-                            className="min-w-full min-h-full zoomable-content"
+                            className="zoomable-blueprint bg-white/[0.02] p-12 lg:p-20 rounded-[3rem] backdrop-blur-sm border border-white/5 shadow-2xl transition-all"
+                            style={{ 
+                                zoom: 2,
+                                display: 'inline-block'
+                            }}
                             dangerouslySetInnerHTML={{ __html: svg }} 
                         />
                     </div>
-                </div>
+
+                    <div className="absolute bottom-10 left-10 p-4 bg-cyber-900/50 border border-cyber-700/50 rounded-xl flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">AI Neural Rendering v2.0 Engine</span>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </>
     );
@@ -133,6 +174,10 @@ export default function Show({ project, team, messages }: ProjectProps) {
     const [isThinking, setIsThinking] = useState(false);
     const [selectedVersion, setSelectedVersion] = useState<number>(
         project.blueprints.length > 0 ? project.blueprints[0].version : 1
+    );
+
+    const [expandedMilestones, setExpandedMilestones] = useState<number[]>(
+        project.blueprints.length > 0 ? project.blueprints[0].milestones.map((_: any, i: number) => i) : []
     );
 
     const { data: chatData, setData: setChatData, post: postChat, processing: chatProcessing, reset: resetChat } = useForm({
@@ -263,6 +308,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                             { id: 'blueprint', label: 'Engineering Blueprint', icon: Layers },
                             { id: 'estimate', label: 'Estimations', icon: Clock },
                             { id: 'proposal', label: 'Client Proposal', icon: FileText },
+                            { id: 'roadmap', label: 'Roadmap & Schedule', icon: Calendar },
                             { id: 'tasks', label: 'Kanban Board', icon: CheckSquare },
                             { id: 'team', label: 'Team Context', icon: Users },
                         ].map(tab => (
@@ -450,16 +496,16 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                     <div className="space-y-12">
                                         <section>
                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 block">System Context & Integration Flow</label>
-                                            <Mermaid chart={blueprint.architecture?.hldMermaid} />
+                                            <Mermaid chart={blueprint.architecture?.hldMermaid} title={`${project.title} - High Level Design`} />
                                         </section>
                                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                                             <section>
                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 block">Data Model Architecture</label>
-                                                <Mermaid chart={blueprint.architecture?.dbMermaid} />
+                                                <Mermaid chart={blueprint.architecture?.dbMermaid} title={`${project.title} - Database Schema`} />
                                             </section>
                                             <section>
                                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 block">Client Application Flow</label>
-                                                <Mermaid chart={blueprint.architecture?.frontendMermaid} />
+                                                <Mermaid chart={blueprint.architecture?.frontendMermaid} title={`${project.title} - Frontend Logic`} />
                                             </section>
                                         </div>
                                     </div>
@@ -595,6 +641,179 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                 <div className="prose prose-invert prose-architex max-w-none">
                                     <ReactMarkdown>{proposal.content}</ReactMarkdown>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Roadmap Tab */}
+                        {activeTab === 'roadmap' && (
+                            <div className="space-y-12 animate-fade-in mb-20">
+                                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div>
+                                        <h2 className="text-3xl font-black mb-2 tracking-tight text-slate-100 uppercase italic">Execution Strategy</h2>
+                                        <p className="text-slate-500 font-medium tracking-tight">Synchronizing v{blueprint.version}.0 milestones with granular developer units</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="card px-5 py-3 border-l-4 border-l-cyan-500 bg-cyber-900/40">
+                                            <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest block mb-1">Total Milestones</span>
+                                            <div className="text-2xl font-bold text-slate-200">{blueprint.milestones?.length || 0}</div>
+                                        </div>
+                                        <div className="card px-5 py-3 border-l-4 border-l-indigo-500 bg-cyber-900/40">
+                                            <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest block mb-1">Developer Units</span>
+                                            <div className="text-2xl font-bold text-slate-200">{tasks.length}</div>
+                                        </div>
+                                    </div>
+                                </header>
+
+                                {/* Visual Roadmap Chart */}
+                                <section className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                                            <Calendar className="w-5 h-5 text-cyan-400" />
+                                        </div>
+                                        <h3 className="font-black text-xl text-slate-200 uppercase tracking-tight">Neural Roadmap</h3>
+                                    </div>
+                                    
+                                    <div className="card p-8 bg-cyber-900/40 border-cyber-700/50 backdrop-blur-sm overflow-x-auto custom-scrollbar">
+                                        <Mermaid 
+                                            title={`${project.title} - Execution Roadmap`}
+                                            chart={`gantt
+    title ${project.title} Timeline
+    dateFormat  YYYY-MM-DD
+    axisFormat %W
+    section Strategic Milestones
+    ${blueprint.milestones?.map((m: any, i: number) => {
+        const name = (m.name || `Phase ${i+1}`).replace(/"/g, "'");
+        return `"${name}" :milestone, m${i}, 2024-01-01, 1d`;
+    }).join('\n    ')}
+    section Execution Phases
+    ${blueprint.milestones?.map((m: any, i: number) => {
+        const name = (m.name || `Phase ${i+1}`).replace(/"/g, "'");
+        // Clean duration to be mermaid compatible (e.g. 2w, 4d)
+        let duration = m.duration || "1w";
+        if (duration.toLowerCase().includes('week')) duration = parseInt(duration) + 'w';
+        else if (duration.toLowerCase().includes('day')) duration = parseInt(duration) + 'd';
+        return `"${name} Phase" :active, p${i}, 2024-01-01, ${duration}`;
+    }).join('\n    ')}`} 
+                                        />
+                                    </div>
+                                </section>
+
+                                {/* Milestonewise Tasks Tables */}
+                                <section className="space-y-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                                            <Flag className="w-5 h-5 text-indigo-400" />
+                                        </div>
+                                        <h3 className="font-black text-xl text-slate-200 uppercase tracking-tight">Phase Breakdown</h3>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-8 relative before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-px before:bg-cyber-800">
+                                        {blueprint.milestones?.map((milestone: any, mIndex: number) => {
+                                            const milestoneTasks = tasks.filter((t: any) => t.milestone_index === mIndex);
+                                            const isExpanded = expandedMilestones.includes(mIndex);
+                                            
+                                            return (
+                                                <div key={mIndex} className="relative pl-12">
+                                                    <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-cyber-950 border-2 border-indigo-500 flex items-center justify-center z-10">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                                    </div>
+                                                    
+                                                    <div className="card p-0 overflow-hidden shadow-2xl border-cyber-700/50 hover:border-indigo-500/20 transition-all group">
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (isExpanded) {
+                                                                    setExpandedMilestones(expandedMilestones.filter(i => i !== mIndex));
+                                                                } else {
+                                                                    setExpandedMilestones([...expandedMilestones, mIndex]);
+                                                                }
+                                                            }}
+                                                            className="w-full bg-gradient-to-r from-cyber-800 to-cyber-900 px-8 py-5 flex items-center justify-between border-b border-cyber-700 group-hover:from-cyber-800/80 transition-all"
+                                                        >
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="flex flex-col text-left">
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Phase {(mIndex + 1).toString().padStart(2, '0')}</span>
+                                                                    <h4 className="text-lg font-black text-slate-100 group-hover:text-cyan-400 transition-colors uppercase tracking-tight">{milestone.name}</h4>
+                                                                </div>
+                                                                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-cyber-950/50 text-[10px] font-black text-slate-500 rounded-full border border-cyber-700/40 uppercase tracking-tighter">
+                                                                    <Clock className="w-3 h-3 text-indigo-500" />
+                                                                    {milestone.duration || 'N/A'}
+                                                                </div>
+                                                            </div>
+                                                            <div className={`p-2 rounded-lg bg-cyber-900/50 border border-cyber-700 text-slate-500 group-hover:text-cyan-400 transition-all ${isExpanded ? 'rotate-180' : ''}`}>
+                                                                <ChevronDown className="w-4 h-4" />
+                                                            </div>
+                                                        </button>
+                                                        
+                                                        <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden pointer-events-none'}`}>
+                                                            <div className="p-8 space-y-8">
+                                                                <div className="flex flex-col lg:flex-row gap-8">
+                                                                    <div className="flex-1">
+                                                                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-[0.2em] block mb-3 italic">Execution Strategy</span>
+                                                                        <p className="text-sm text-slate-400 leading-relaxed italic border-l-2 border-indigo-500/20 pl-4 bg-indigo-500/[0.01] py-3 rounded-r-xl">
+                                                                            {milestone.description}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="lg:w-1/3">
+                                                                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-[0.2em] block mb-3 italic">Key Deliverables</span>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {milestone.deliverables?.map((d: string, di: number) => (
+                                                                                <span key={di} className="px-2 py-1 bg-cyber-900 border border-cyber-700 text-[10px] font-bold text-slate-500 uppercase rounded hover:border-indigo-500/30 transition-colors">
+                                                                                    {d}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="overflow-hidden rounded-xl border border-cyber-800 bg-cyber-900/10">
+                                                                    <table className="w-full text-left text-sm">
+                                                                        <thead>
+                                                                            <tr className="bg-cyber-900/80 border-b border-cyber-700">
+                                                                                <th className="px-6 py-4 font-black uppercase tracking-widest text-slate-600 text-[9px]">Priority</th>
+                                                                                <th className="px-6 py-4 font-black uppercase tracking-widest text-slate-600 text-[9px]">Developer Unit</th>
+                                                                                <th className="px-6 py-4 font-black uppercase tracking-widest text-slate-600 text-[9px] text-right">Effort</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody className="divide-y divide-cyber-800">
+                                                                            {milestoneTasks.length > 0 ? (
+                                                                                milestoneTasks.map((task: any, tIndex: number) => (
+                                                                                    <tr key={tIndex} className="hover:bg-cyber-800/30 transition-colors group/row">
+                                                                                        <td className="px-6 py-4">
+                                                                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border leading-none ${
+                                                                                                task.priority === 'critical' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                                                                task.priority === 'high' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                                                                                'bg-cyan-500/10 text-cyan-500 border-cyan-500/20'
+                                                                                            }`}>
+                                                                                                {task.priority}
+                                                                                            </span>
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4">
+                                                                                            <div className="font-bold text-slate-300 group-hover/row:text-cyan-400 transition-colors">{task.title}</div>
+                                                                                            <div className="text-[11px] text-slate-500 truncate max-w-sm mt-0.5 font-medium">{task.description}</div>
+                                                                                        </td>
+                                                                                        <td className="px-6 py-4 text-right font-mono text-cyan-500/70 font-black whitespace-nowrap">
+                                                                                            {task.estimated_hours}H
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                ))
+                                                                            ) : (
+                                                                                <tr>
+                                                                                    <td colSpan={3} className="px-6 py-12 text-center text-slate-600 italic text-xs tracking-widest uppercase">
+                                                                                        No synchronized units for this phase.
+                                                                                    </td>
+                                                                                </tr>
+                                                                            )}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
                             </div>
                         )}
 
