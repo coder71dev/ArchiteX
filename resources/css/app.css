@@ -5,21 +5,21 @@
    ============================================ */
 
 @theme {
-    --color-cyber-950: #050610;
-    --color-cyber-900: #0a0b14;
-    --color-cyber-800: #131525;
-    --color-cyber-700: #1c1f3a;
-    --color-cyber-600: #2d3266;
-    --color-cyber-500: #6366f1;
-    --color-cyber-400: #818cf8;
-    --color-cyber-300: #a5b4fc;
-    --color-cyber-accent: #06b6d4;
-    --color-cyber-accent-light: #22d3ee;
+    --color-cyber-950: #0f0c13;
+    --color-cyber-900: #15121a;
+    --color-cyber-800: #1a1523;
+    --color-cyber-700: #261E2E;
+    --color-cyber-600: #3c2f4a;
+    --color-cyber-500: #F93A8B;
+    --color-cyber-400: #FA5c9e;
+    --color-cyber-300: #FC8cbb;
+    --color-cyber-accent: #c033d6;
+    --color-cyber-accent-light: #d64ced;
     --color-cyber-danger: #f43f5e;
     --color-cyber-success: #10b981;
-    --color-cyber-warning: #f59e0b;
+    --color-cyber-warning: #F3B323;
 
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -90,8 +90,8 @@ body {
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.1); }
-    50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.2); }
+    0%, 100% { box-shadow: 0 0 20px rgba(249, 58, 139, 0.1); }
+    50% { box-shadow: 0 0 40px rgba(249, 58, 139, 0.2); }
 }
 
 @keyframes shimmer {
@@ -126,7 +126,7 @@ body {
    ============================================ */
 
 .gradient-text {
-    background: linear-gradient(135deg, #06b6d4, #818cf8, #a78bfa);
+    background: linear-gradient(135deg, #F93A8B, #c033d6, #F3B323);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -145,7 +145,7 @@ body {
 
 .card:hover {
     border-color: var(--color-cyber-600);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(249, 58, 139, 0.15);
 }
 
 .card-accent {
@@ -183,9 +183,9 @@ body {
 }
 
 .btn-primary:hover {
-    background: #7c3aed;
+    background: #FA5c9e;
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 16px rgba(249, 58, 139, 0.3);
 }
 
 .btn-secondary {
@@ -214,7 +214,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: linear-gradient(135deg, var(--color-cyber-accent), #0891b2);
+    background: linear-gradient(135deg, var(--color-cyber-accent), var(--color-cyber-500));
     color: white;
     font-weight: 600;
     font-size: 0.875rem;
@@ -226,7 +226,7 @@ body {
 
 .btn-accent:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 4px 16px rgba(192, 51, 214, 0.3);
 }
 
 /* ============================================
