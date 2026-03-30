@@ -9,6 +9,7 @@ use App\Models\TeamMember;
 use Closure;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 
 class GenerateParallelEstimateAndProposal
 {
@@ -35,11 +36,11 @@ class GenerateParallelEstimateAndProposal
         // --- Parallelization Pattern ---
         $tasks = [];
 
-        if (!$estimateExists) {
+        if (! $estimateExists) {
             $tasks['estimate'] = function () use ($project, $user, $targetVersion, $team) {
-                $estimatorAgent = (new EstimatorAgent())->continue($project->conversation_id, $user);
-                $estimatePrompt = "Based on the updated blueprint (v{$targetVersion}), provide time and manpower estimates. Available team members: " . json_encode($team);
-                /** @var \Laravel\Ai\Responses\StructuredAgentResponse $estimateResponse */
+                $estimatorAgent = (new EstimatorAgent)->continue($project->conversation_id, $user);
+                $estimatePrompt = "Based on the updated blueprint (v{$targetVersion}), provide time and manpower estimates. Available team members: ".json_encode($team);
+                /** @var StructuredAgentResponse $estimateResponse */
                 $estimateResponse = $estimatorAgent->prompt($estimatePrompt);
                 $estimateData = $estimateResponse->structured;
 
@@ -49,25 +50,25 @@ class GenerateParallelEstimateAndProposal
             };
         }
 
-        if (!$proposalExists) {
+        if (! $proposalExists) {
             $tasks['proposal'] = function () use ($project, $user, $targetVersion) {
-                $proposalAgent = (new ProposalAgent())->continue($project->conversation_id, $user);
+                $proposalAgent = (new ProposalAgent)->continue($project->conversation_id, $user);
                 $proposalPrompt = "Generate a technical proposal and status briefing for '{$project->client_name}' based on the v{$targetVersion} plan. Focus on milestones and technical challenges.";
-                /** @var \Laravel\Ai\Responses\StructuredAgentResponse $proposalResponse */
+                /** @var StructuredAgentResponse $proposalResponse */
                 $proposalResponse = $proposalAgent->prompt($proposalPrompt);
                 $proposalData = $proposalResponse->structured;
 
                 return $project->proposals()->create([
-                    'version'              => $targetVersion,
-                    'content'              => $proposalData['content'] ?? 'Proposal content not available.',
-                    'executive_summary'    => $proposalData['executive_summary'] ?? null,
+                    'version' => $targetVersion,
+                    'content' => $proposalData['content'] ?? 'Proposal content not available.',
+                    'executive_summary' => $proposalData['executive_summary'] ?? null,
                     'technical_challenges' => $proposalData['technical_challenges'] ?? [],
-                    'tone'                 => 'formal',
+                    'tone' => 'formal',
                 ]);
             };
         }
 
-        if (!empty($tasks)) {
+        if (! empty($tasks)) {
             Log::info("Running Estimate and Proposal in parallel for Project {$project->id}");
             Concurrency::run($tasks);
         }

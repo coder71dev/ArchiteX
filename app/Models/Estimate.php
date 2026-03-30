@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Estimate extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'project_id',
         'version',

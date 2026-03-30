@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Blueprint extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'project_id',
         'version',
@@ -20,6 +21,7 @@ class Blueprint extends Model
         'tech_stack',
         'milestones',
         'roadmap',
+        'client_questions',
         'reliability_score',
     ];
 
@@ -32,6 +34,7 @@ class Blueprint extends Model
         'tech_stack' => 'array',
         'milestones' => 'array',
         'roadmap' => 'array',
+        'client_questions' => 'array',
     ];
 
     public function project()

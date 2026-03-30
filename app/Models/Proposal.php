@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Proposal extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'project_id',
         'version',

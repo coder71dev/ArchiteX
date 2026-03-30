@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -32,7 +33,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($team as $member) {
-            \App\Models\TeamMember::create($member);
+            TeamMember::create($member);
         }
     }
 }

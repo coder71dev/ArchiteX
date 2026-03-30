@@ -8,7 +8,6 @@ Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
-
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return redirect()->route('dashboard');
@@ -22,4 +21,3 @@ Route::middleware('auth')->group(function () {
         Route::post('/{project}/chat', [ProjectController::class, 'chat'])->name('chat');
     });
 });
-

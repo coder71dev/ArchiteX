@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Project extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'user_id',
         'title',
@@ -19,6 +20,10 @@ class Project extends Model
         'target_deadline',
         'conversation_id',
         'latest_status_message',
+        'budget',
+        'timeline',
+        'target_audience',
+        'notes',
     ];
 
     protected $casts = [
