@@ -16,6 +16,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // ... existence context ...
+        \Illuminate\Support\Facades\Event::listen(
+            \Laravel\Ai\Events\AgentFailedOver::class,
+            \App\Listeners\UpdateProjectOnAiFailover::class,
+        );
+
         // Fix SSL locally without needing admin rights
         if (app()->environment('local')) {
             $cert = base_path('cacert.pem');

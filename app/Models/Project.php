@@ -18,6 +18,7 @@ class Project extends Model
         'client_name',
         'target_deadline',
         'conversation_id',
+        'latest_status_message',
     ];
 
     protected $casts = [
