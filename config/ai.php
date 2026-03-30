@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'xai',
+    'default' => 'gemini',
     'default_for_images' => 'gemini',
     'default_for_audio' => 'gemini',
     'default_for_transcription' => 'gemini',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
-import { Plus, Layout, Clock, User, ArrowRight, Zap, Target, Shield, LogOut } from 'lucide-react';
+import { Plus, Layout, Clock, User, ArrowRight, Zap, Target, Shield, LogOut, FileText } from 'lucide-react';
 
 import { PageProps } from '@inertiajs/core';
 
@@ -120,14 +120,20 @@ export default function Dashboard({ projects }: Props) {
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-400 ml-1">Project Brief & Requirements</label>
+                                    <div className="flex justify-between items-center px-1">
+                                        <label className="text-sm font-semibold text-slate-400">Project Brief & Requirements</label>
+                                        <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                                            <FileText className="w-2.5 h-2.5" />
+                                            Markdown Supported
+                                        </span>
+                                    </div>
                                     <textarea
                                         required
                                         value={data.brief}
                                         onChange={e => setData('brief', e.target.value)}
-                                        placeholder="Describe the project goals, tech stack preferences, and key features..."
-                                        rows={4}
-                                        className="w-full bg-cyber-800 border-cyber-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-600 resize-none"
+                                        placeholder="Describe goals, tech stack, and features. Markdown is supported and detailed briefs improve blueprint accuracy by 40%."
+                                        rows={6}
+                                        className="w-full bg-cyber-800/80 border-cyber-700 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-600 font-mono text-sm leading-relaxed min-h-[160px]"
                                     ></textarea>
                                     {errors.brief && <p className="text-rose-500 text-sm">{errors.brief}</p>}
                                 </div>

@@ -47,12 +47,18 @@ class ProjectController extends Controller
     {
         return Inertia::render('Projects/Show', [
             'project' => $project->load([
-                'blueprints' => fn($q) => $q->latest(),
+                'blueprints' => fn($q) => $q->orderBy('version', 'desc'),
                 'estimates' => fn($q) => $q->latest(),
                 'proposals' => fn($q) => $q->latest(),
                 'tasks.assignee'
             ]),
             'team' => TeamMember::where('is_active', true)->get(),
+            'messages' => $project->conversation_id 
+                ? \Illuminate\Support\Facades\DB::table('agent_conversation_messages')
+                    ->where('conversation_id', $project->conversation_id)
+                    ->orderBy('created_at', 'asc')
+                    ->get()
+                : []
         ]);
     }
 

@@ -73,8 +73,8 @@ PROMPT;
     public function tools(): iterable
     {
         return [
-            new WebSearch,
-            new WebFetch,
+            // new WebSearch,
+            // new WebFetch,
         ];
     }
 
