@@ -4,7 +4,7 @@ import {
     ChevronRight, MessageSquare, Send, Zap, Clock, 
     Layers, FileText, CheckSquare, Users, 
     Maximize2, Download, RefreshCcw, Sparkles,
-    ZoomIn, X
+    ZoomIn, X, AlertCircle, Lightbulb, Shield
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
@@ -12,6 +12,8 @@ import mermaid from 'mermaid';
 // Mermaid rendering component
 const Mermaid = ({ chart }: { chart: string }) => {
     const [svg, setSvg] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [showRaw, setShowRaw] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -19,6 +21,7 @@ const Mermaid = ({ chart }: { chart: string }) => {
         mermaid.initialize({
             startOnLoad: true,
             theme: 'dark',
+            securityLevel: 'loose',
             themeVariables: {
                 primaryColor: '#6366f1',
                 primaryTextColor: '#fff',
@@ -31,16 +34,45 @@ const Mermaid = ({ chart }: { chart: string }) => {
         });
         
         const renderChart = async () => {
+            if (!chart) return;
             try {
+                setError(null);
                 const { svg } = await mermaid.render(id, chart);
                 setSvg(svg);
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Mermaid error:', err);
+                setError('Neural visualization syntax error. Could not render architectural diagram.');
             }
         };
 
-        if (chart) renderChart();
+        renderChart();
     }, [chart]);
+
+    if (error) {
+        return (
+            <div className="bg-rose-500/5 border border-rose-500/20 p-8 rounded-xl flex flex-col items-center justify-center text-center space-y-4">
+                <div className="flex flex-col items-center gap-2">
+                    <AlertCircle className="w-8 h-8 text-rose-500/60" />
+                    <p className="text-xs text-rose-500/80 font-bold uppercase tracking-widest leading-relaxed">
+                        {error}
+                    </p>
+                </div>
+                
+                <button 
+                    onClick={() => setShowRaw(!showRaw)}
+                    className="text-[10px] font-bold text-slate-500 hover:text-cyan-400 transition-colors uppercase tracking-widest flex items-center gap-2"
+                >
+                    {showRaw ? 'Hide Raw Logic' : 'View Raw Logic'}
+                </button>
+
+                {showRaw && (
+                    <pre className="w-full p-4 bg-cyber-900 border border-cyber-700 rounded-lg text-left text-[10px] font-mono text-slate-500 overflow-x-auto whitespace-pre custom-scrollbar">
+                        {chart}
+                    </pre>
+                )}
+            </div>
+        );
+    }
 
     return (
         <>
@@ -292,10 +324,11 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                 <h3 className="text-xl font-bold text-rose-500">Neural Sync Interrupted</h3>
                                 <p className="text-slate-400 max-w-lg mx-auto">{project.error_message}</p>
                                 <button 
-                                    onClick={() => router.post(route('projects.chat', project.id), { message: 'Retry the previous plan generation.' })}
-                                    className="btn-primary bg-rose-500 hover:bg-rose-600 mt-4"
+                                    onClick={() => router.post(route('projects.chat', project.id), { message: 'Neural Sync Retry: Recovering from the last interrupted architectural phase.', retry: true })}
+                                    className="btn-primary bg-rose-500 hover:bg-rose-600 mt-4 h-12 px-10 flex items-center gap-2 group"
                                 >
-                                    Force Retry Generation
+                                    <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                    Force Phase Recovery
                                 </button>
                             </div>
                         )}
@@ -326,6 +359,39 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                         {blueprint.overview}
                                     </p>
                                 </header>
+
+                                {blueprint.businessContext && (
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                        <div className="card p-8 border-l-4 border-l-rose-500/50 bg-rose-500/[0.02]">
+                                            <h3 className="font-bold text-xl mb-6 flex items-center gap-2 text-rose-400">
+                                                <AlertCircle className="w-5 h-5" />
+                                                Business Challenges
+                                            </h3>
+                                            <ul className="space-y-3">
+                                                {blueprint.businessContext.challenges?.map((c: string, i: number) => (
+                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-400 leading-relaxed">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500/40 mt-2 shrink-0" />
+                                                        {c}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div className="card p-8 border-l-4 border-l-amber-500/50 bg-amber-500/[0.02]">
+                                            <h3 className="font-bold text-xl mb-6 flex items-center gap-2 text-amber-400">
+                                                <Lightbulb className="w-5 h-5" />
+                                                Strategic Suggestions
+                                            </h3>
+                                            <ul className="space-y-3">
+                                                {blueprint.businessContext.suggestions?.map((s: string, i: number) => (
+                                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-400 leading-relaxed">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500/40 mt-2 shrink-0" />
+                                                        {s}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                                     <div className="card p-8">
@@ -380,7 +446,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
 
                                 {/* Diagrams */}
                                 <div className="space-y-8">
-                                    <h3 className="font-bold text-xl">Technical Visualizations</h3>
+                                    <h3 className="font-bold text-xl text-slate-200">Technical Visualizations</h3>
                                     <div className="space-y-12">
                                         <section>
                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 block">System Context & Integration Flow</label>
@@ -398,6 +464,70 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                         </div>
                                     </div>
                                 </div>
+
+                                {blueprint.techStack && (
+                                    <section className="space-y-6 pt-8 border-t border-cyber-800">
+                                        <h3 className="text-2xl font-bold flex items-center gap-2 text-slate-200">
+                                            <Layers className="text-cyan-400 w-6 h-6" />
+                                            Technology Stack Selection
+                                        </h3>
+                                        <div className="grid grid-cols-1 gap-6">
+                                            {blueprint.techStack.map((stack: any, i: number) => (
+                                                <div key={i} className="card p-8 border-t-2 border-t-indigo-500/30">
+                                                    <div className="flex flex-col lg:flex-row lg:items-start gap-8">
+                                                        <div className="lg:w-1/3">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2 block">{stack.category}</span>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {stack.items.map((item: string, j: number) => (
+                                                                    <span key={j} className="px-3 py-1.5 bg-indigo-500/10 text-indigo-300 rounded-lg text-sm font-bold border border-indigo-500/20 shadow-sm">
+                                                                        {item}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 space-y-4">
+                                                            <div>
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Architecture Rationale</span>
+                                                                <p className="text-sm text-slate-400 leading-relaxed italic border-l-2 border-cyan-500/30 pl-4">
+                                                                    {stack.rationale}
+                                                                </p>
+                                                            </div>
+                                                            {stack.alternatives && stack.alternatives.length > 0 && (
+                                                                <div>
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Recommended Alternatives</span>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {stack.alternatives.map((alt: string, j: number) => (
+                                                                            <span key={j} className="px-2 py-1 bg-cyber-800 text-slate-500 rounded text-[10px] font-bold border border-cyber-700">
+                                                                                {alt}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+
+                                {blueprint.architecture?.considerations && (
+                                    <section className="space-y-6 pt-8 border-t border-cyber-800">
+                                        <h3 className="text-2xl font-bold flex items-center gap-2 text-slate-200">
+                                            <Shield className="text-rose-500 w-6 h-6" />
+                                            Architectural Considerations
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {blueprint.architecture.considerations.map((consideration: string, i: number) => (
+                                                <div key={i} className="p-4 bg-cyber-900/50 rounded-xl border border-cyber-700 flex items-start gap-3">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-2 shrink-0 animate-pulse" />
+                                                    <span className="text-sm text-slate-400 leading-relaxed">{consideration}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
                             </div>
                         )}
 
@@ -564,18 +694,55 @@ export default function Show({ project, team, messages }: ProjectProps) {
                             Hello Architect! I've been tracking our project evolution. We're currently looking at <strong>v{blueprint.version}.0</strong>. How can I assist with further refinements?
                         </div>
 
-                        {messages.map((msg, index) => {
+                        {/* Render Initial Brief as first message */}
+                        <div className="flex flex-col items-end mb-8">
+                            <div className="max-w-[92%] p-5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-100 rounded-2xl rounded-tr-none shadow-2xl relative group transition-all">
+                                <div className="absolute -top-3 right-4 px-2 py-0.5 bg-indigo-500 text-[9px] font-black uppercase tracking-widest rounded text-white shadow-lg">Initial Mission Brief</div>
+                                <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed text-indigo-100/90 font-mono">
+                                    <ReactMarkdown>{project.brief}</ReactMarkdown>
+                                </div>
+                            </div>
+                            <span className="text-[9px] mt-2 px-2 uppercase tracking-tighter font-black text-indigo-500/60">
+                                Project Inception • {new Date(project.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+
+                        {messages.map((msg: any, index: number) => {
                             let content = msg.content;
                             let isJson = false;
                             let parsedContent: any = null;
+
+                            // Pattern detection for system-automated prompts
+                            const isSystemAction = msg.role === 'user' && (
+                                content.includes('Based on the updated blueprint') || 
+                                content.includes('Generate a technical proposal') ||
+                                content.includes('Generate granular, assignable developer tasks') ||
+                                content.includes('Neural Sync Retry')
+                            );
 
                             try {
                                 if (content.trim().startsWith('{')) {
                                     parsedContent = JSON.parse(content);
                                     isJson = true;
                                 }
-                            } catch (e) {
-                                // Not JSON
+                            } catch (e) {}
+
+                            if (isSystemAction) {
+                                return (
+                                    <div key={msg.id || index} className="flex flex-col items-center py-4 px-2 opacity-60">
+                                        <div className="flex items-center gap-3 w-full">
+                                            <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-cyber-700"></div>
+                                            <div className="px-3 py-1 bg-cyber-900 border border-cyber-700/50 rounded-full flex items-center gap-2">
+                                                <Zap className="w-3 h-3 text-amber-500 animate-pulse" />
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">System Workflow Action</span>
+                                            </div>
+                                            <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-cyber-700"></div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-600 mt-2 text-center max-w-[80%] italic font-medium leading-relaxed">
+                                            {content.split('\n')[0].length > 100 ? content.substring(0, 100) + '...' : content.split('\n')[0]}
+                                        </p>
+                                    </div>
+                                );
                             }
 
                             return (
@@ -594,7 +761,7 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                     <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
                                                         <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                                                     </div>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Blueprint Generated</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Blueprint Synchronized</span>
                                                 </div>
                                                 <p className="text-slate-300 leading-relaxed italic">
                                                     "{parsedContent.overview || 'Architecture updated.'}"

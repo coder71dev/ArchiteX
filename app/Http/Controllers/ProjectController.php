@@ -64,15 +64,23 @@ class ProjectController extends Controller
 
     public function chat(Request $request, Project $project)
     {
-        $request->validate(['message' => 'required|string']);
+        $request->validate([
+            'message' => 'required|string',
+            'retry'   => 'nullable|boolean'
+        ]);
 
         $project->update([
             'status' => 'planning',
-            'current_phase' => 'updating',
+            'current_phase' => $request->retry ? $project->current_phase : 'updating',
         ]);
 
         // Dispatch Update Job
-        \App\Jobs\GenerateProjectPlanJob::dispatch($project, $request->message, true);
+        \App\Jobs\GenerateProjectPlanJob::dispatch(
+            $project, 
+            $request->message, 
+            $request->retry ? false : true, // If retry, isUpdate is false (to keep same version)
+            $request->retry ?? false
+        );
 
         return back();
     }

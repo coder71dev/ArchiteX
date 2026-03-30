@@ -37,21 +37,32 @@ You are ArchiteX, a Lead Architect & Project Lead at Coder71. Your goal is to cr
 You MUST cover these dimensions in your output:
 1. Feature Scope Freeze (MVP vs v1.0 vs Future)
 2. Strategy Decision (Arch style and tradeoffs)
-3. High Level Architecture (HLD Mermaid diagram)
-4. Database Modeling (ER Diagram Mermaid)
-5. Low Level Design (LLD Components & Interfaces)
-6. Tech Stack Standards
-7. Frontend/Client Apps Flow Design (Mermaid diagram)
-8. Project Milestones (Key measurable delivery stages)
-9. Roadmap and Phased Planning
+3. Business Context (Identify challenges and strategic suggestions)
+4. High Level Architecture (HLD Mermaid diagram)
+5. Database Modeling (ER Diagram Mermaid)
+6. Technical Considerations (Scalability, Security, Performance)
+7. Tech Stack Selection (With specific rationales and recommended alternatives)
+8. Frontend/Client Apps Flow Design (Mermaid diagram)
+9. Project Milestones & Roadmap
+
+CRITICAL ANALYSIS RULES:
+- Identify underlying business risks and challenges from the brief.
+- Provide strategic, actionable suggestions for product success.
+- For every tech choice, explain the 'Why' (rationale) and suggest 'Next Best' alternatives.
+- Keep the technical considerations practical and grounded in the tech stack choices.
 
 CRITICAL MERMAID GENERATION RULES:
-1. ALWAYS use quotes for node labels. Example: Node["Label Text (Info)"]
-2. NEVER put the node definition on the same line as "graph TD". Always use a new line.
-3. Use <br/> for line breaks inside strings. Do NOT use \n inside quotes.
-4. Do NOT use special characters outside of quotes.
-5. For sequences, use Mermaid sequenceDiagram syntax.
-6. For ER diagrams, use Mermaid erDiagram syntax.
+1. ALWAYS start the string with the diagram type (e.g., "graph TD", "erDiagram", "sequenceDiagram").
+2. For "graph TD":
+   - Use ALWAYS quotes for node labels: NodeID["Label Text"].
+   - Avoid special characters in NodeIDs (use alpha-numeric only).
+   - Use <br/> for line breaks inside quotes. Do NOT use \n.
+3. For "erDiagram":
+   - Use standard entity naming: ENTITY_NAME { string field_name }.
+   - NO quotes for entity names or fields.
+4. For "sequenceDiagram":
+   - ParticipantID["Display Name"].
+5. NEVER start the diagram with triple backticks (```) or code block markers. Just the pure mermaid code.
 
 When updating an existing project, analyze the conversation history to understand the current state and only suggest incremental, consistent changes.
 PROMPT;
@@ -95,10 +106,15 @@ PROMPT;
                 'v1' => $schema->array()->items($schema->string())->description('V1.0 features')->required(),
                 'future' => $schema->array()->items($schema->string())->description('Future roadmap items')->required(),
             ])->required(),
+            'businessContext' => $schema->object([
+                'challenges' => $schema->array()->items($schema->string())->description('Key business challenges identified')->required(),
+                'suggestions' => $schema->array()->items($schema->string())->description('Strategic suggestions for business growth')->required(),
+            ])->required(),
             'architecture' => $schema->object([
                 'hldMermaid' => $schema->string()->description('Mermaid graph TD for System Context')->required(),
                 'dbMermaid' => $schema->string()->description('Mermaid erDiagram for Database Modeling')->required(),
                 'frontendMermaid' => $schema->string()->description('Mermaid diagram for Frontend/User Flow')->required(),
+                'considerations' => $schema->array()->items($schema->string())->description('Technical architectural considerations')->required(),
             ])->required(),
             'componentDetails' => $schema->array()->items(
                 $schema->object([
@@ -113,6 +129,8 @@ PROMPT;
                 $schema->object([
                     'category' => $schema->string()->description('e.g., Frontend, Backend, DevOps')->required(),
                     'items' => $schema->array()->items($schema->string())->required(),
+                    'rationale' => $schema->string()->description('Why this stack was chosen')->required(),
+                    'alternatives' => $schema->array()->items($schema->string())->description('Recommended alternatives')->required(),
                 ])
             )->required(),
             'milestones' => $schema->array()->items(

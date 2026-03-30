@@ -33,7 +33,8 @@ class GenerateProjectPlanJob implements ShouldQueue
     public function __construct(
         public Project $project,
         public string $message,
-        public bool $isUpdate = false
+        public bool $isUpdate = false,
+        public bool $isRetry = false
     ) {}
 
     /**
@@ -46,7 +47,15 @@ class GenerateProjectPlanJob implements ShouldQueue
 
         try {
             $maxVersion = (int) ($project->blueprints()->max('version') ?? 0);
-            $targetVersion = $this->isUpdate ? ($maxVersion + 1) : max(1, $maxVersion);
+            
+            // If it's a retry, we keep the same version. 
+            // If it's an update from chat, we increment.
+            // If it's pure initial generation, target is 1.
+            $targetVersion = match(true) {
+                $this->isRetry => max(1, $maxVersion),
+                $this->isUpdate => ($maxVersion + 1),
+                default => 1
+            };
 
             $payload = [
                 'project' => $project,
