@@ -38,6 +38,10 @@ export default function Dashboard({ projects }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
         brief: '',
         client_name: '',
+        budget: '',
+        timeline: '',
+        target_audience: '',
+        notes: '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -110,18 +114,35 @@ export default function Dashboard({ projects }: Props) {
                                             className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
                                         />
                                     </div>
-                                    <div className="flex items-end">
-                                        <button 
-                                            disabled={processing}
-                                            className="btn-accent w-full justify-center h-[52px]"
-                                        >
-                                            {processing ? 'Processing Requirements...' : (
-                                                <>
-                                                    Generate Blueprint
-                                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                                </>
-                                            )}
-                                        </button>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Budget</label>
+                                        <input
+                                            type="text"
+                                            value={data.budget}
+                                            onChange={e => setData('budget', e.target.value)}
+                                            placeholder="e.g. $10k - $20k"
+                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Required Timeframe</label>
+                                        <input
+                                            type="text"
+                                            value={data.timeline}
+                                            onChange={e => setData('timeline', e.target.value)}
+                                            placeholder="e.g. June 2026 or 3 Months"
+                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Target Audience & Region</label>
+                                        <input
+                                            type="text"
+                                            value={data.target_audience}
+                                            onChange={e => setData('target_audience', e.target.value)}
+                                            placeholder="e.g. B2B, US only"
+                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
+                                        />
                                     </div>
                                 </div>
                                 
@@ -142,6 +163,31 @@ export default function Dashboard({ projects }: Props) {
                                         className="w-full bg-[#1a1523]/80 border-[#261E2E] rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600 font-mono text-sm leading-relaxed min-h-[160px]"
                                     ></textarea>
                                     {errors.brief && <p className="text-rose-500 text-sm">{errors.brief}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-zinc-400 ml-1">Additional Notes</label>
+                                    <textarea
+                                        value={data.notes}
+                                        onChange={e => setData('notes', e.target.value)}
+                                        placeholder="Constraints, integrations, legacy code context, or anything that helps contextualize the build..."
+                                        rows={3}
+                                        className="w-full bg-[#1a1523]/80 border-[#261E2E] rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600 font-mono text-sm leading-relaxed"
+                                    ></textarea>
+                                </div>
+
+                                <div className="flex justify-end pt-2">
+                                    <button 
+                                        disabled={processing}
+                                        className="btn-accent px-8 justify-center h-[52px]"
+                                    >
+                                        {processing ? 'Processing Requirements...' : (
+                                            <>
+                                                Generate Blueprint
+                                                <ArrowRight className="w-4 h-4 ml-2" />
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             </form>
                         </div>

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateProjectPlanJob;
 use App\Models\Project;
 use App\Models\TeamMember;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ProjectController extends Controller
 {
@@ -16,7 +17,7 @@ class ProjectController extends Controller
         return Inertia::render('Dashboard', [
             'projects' => Project::with(['latestBlueprint', 'latestEstimate'])
                 ->latest()
-                ->get()
+                ->get(),
         ]);
     }
 
@@ -25,6 +26,10 @@ class ProjectController extends Controller
         $request->validate([
             'brief' => 'required|string|min:10',
             'client_name' => 'nullable|string',
+            'budget' => 'nullable|string',
+            'timeline' => 'nullable|string',
+            'target_audience' => 'nullable|string',
+            'notes' => 'nullable|string',
         ]);
 
         // 1. Create the project
@@ -33,12 +38,16 @@ class ProjectController extends Controller
             'title' => 'Analyzing Requirements...',
             'brief' => $request->brief,
             'client_name' => $request->client_name,
+            'budget' => $request->budget,
+            'timeline' => $request->timeline,
+            'target_audience' => $request->target_audience,
+            'notes' => $request->notes,
             'status' => 'planning',
             'current_phase' => 'initializing',
         ]);
 
         // 2. Dispatch Background Job
-        \App\Jobs\GenerateProjectPlanJob::dispatch($project, $request->brief);
+        GenerateProjectPlanJob::dispatch($project, $request->brief);
 
         return redirect()->route('projects.show', $project->id);
     }
@@ -47,18 +56,18 @@ class ProjectController extends Controller
     {
         return Inertia::render('Projects/Show', [
             'project' => $project->load([
-                'blueprints' => fn($q) => $q->orderBy('version', 'desc'),
-                'estimates' => fn($q) => $q->latest(),
-                'proposals' => fn($q) => $q->latest(),
-                'tasks.assignee'
+                'blueprints' => fn ($q) => $q->orderBy('version', 'desc'),
+                'estimates' => fn ($q) => $q->latest(),
+                'proposals' => fn ($q) => $q->latest(),
+                'tasks.assignee',
             ]),
             'team' => TeamMember::where('is_active', true)->get(),
-            'messages' => $project->conversation_id 
-                ? \Illuminate\Support\Facades\DB::table('agent_conversation_messages')
+            'messages' => $project->conversation_id
+                ? DB::table('agent_conversation_messages')
                     ->where('conversation_id', $project->conversation_id)
                     ->orderBy('created_at', 'asc')
                     ->get()
-                : []
+                : [],
         ]);
     }
 
@@ -66,7 +75,7 @@ class ProjectController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'retry'   => 'nullable|boolean'
+            'retry' => 'nullable|boolean',
         ]);
 
         $project->update([
@@ -75,9 +84,9 @@ class ProjectController extends Controller
         ]);
 
         // Dispatch Update Job
-        \App\Jobs\GenerateProjectPlanJob::dispatch(
-            $project, 
-            $request->message, 
+        GenerateProjectPlanJob::dispatch(
+            $project,
+            $request->message,
             $request->retry ? false : true, // If retry, isUpdate is false (to keep same version)
             $request->retry ?? false
         );
@@ -85,4 +94,3 @@ class ProjectController extends Controller
         return back();
     }
 }
-

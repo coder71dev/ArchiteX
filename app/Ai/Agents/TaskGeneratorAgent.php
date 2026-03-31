@@ -19,7 +19,7 @@ use Stringable;
 #[Provider([Lab::Gemini, Lab::xAI, Lab::Groq])]
 #[Model('gemini-2.5-flash')]
 #[Timeout(120)]
-class TaskGeneratorAgent implements Agent, Conversational, HasStructuredOutput, HasMiddleware
+class TaskGeneratorAgent implements Agent, Conversational, HasMiddleware, HasStructuredOutput
 {
     use Promptable, RemembersConversations;
 

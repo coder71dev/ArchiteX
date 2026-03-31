@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TeamMember extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'name',
         'role',

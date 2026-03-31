@@ -6,7 +6,7 @@ import {
     Layers, FileText, CheckSquare, Users, 
     Maximize2, Download, RefreshCcw, Sparkles,
     ZoomIn, X, AlertCircle, Lightbulb, Shield,
-    Calendar, Flag, Briefcase, ChevronDown, ChevronUp
+    Calendar, Flag, Briefcase, ChevronDown, ChevronUp, HelpCircle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
@@ -407,6 +407,34 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                 </ReactMarkdown>
                                             </div>
                                         </div>
+                                        
+                                        {/* Project Meta Context */}
+                                        <div className="mt-4 pt-4 border-t border-[#F93A8B]/20 flex flex-wrap gap-x-8 gap-y-4">
+                                            {project.budget && (
+                                                <div>
+                                                    <span className="text-[10px] block font-black text-zinc-600 uppercase tracking-widest italic mb-1">Budget</span>
+                                                    <span className="text-sm font-black text-zinc-300 italic">{project.budget}</span>
+                                                </div>
+                                            )}
+                                            {project.timeline && (
+                                                <div>
+                                                    <span className="text-[10px] block font-black text-zinc-600 uppercase tracking-widest italic mb-1">Timeline</span>
+                                                    <span className="text-sm font-black text-zinc-300 italic">{project.timeline}</span>
+                                                </div>
+                                            )}
+                                            {project.target_audience && (
+                                                <div>
+                                                    <span className="text-[10px] block font-black text-zinc-600 uppercase tracking-widest italic mb-1">Target Audience</span>
+                                                    <span className="text-sm font-black text-zinc-300 italic">{project.target_audience}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {project.notes && (
+                                            <div className="mt-4 p-4 bg-[#0f0c13] rounded-xl border border-[#F93A8B]/10">
+                                                <span className="text-[10px] block font-black text-[#F93A8B] uppercase tracking-widest italic mb-2">Additional Notes</span>
+                                                <p className="text-xs text-zinc-400 font-medium italic leading-relaxed">{project.notes}</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <h2 className="text-4xl font-black mb-4 tracking-tight text-white">Strategic Framework</h2>
@@ -595,6 +623,33 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                 <div key={i} className="bg-[#15121a] p-6 rounded-[2rem] border border-[#261E2E] flex items-start gap-4 shadow-sm hover:shadow-md transition-all group">
                                                     <div className="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse border-4 border-rose-50 group-hover:bg-[#F93A8B] transition-colors" />
                                                     <span className="text-sm text-zinc-400 font-bold italic leading-relaxed">{consideration}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+
+                                {blueprint.client_questions && blueprint.client_questions.length > 0 && (
+                                    <section className="space-y-10 pt-16 border-t border-[#261E2E]">
+                                        <h3 className="text-4xl font-black flex items-center gap-4 text-white uppercase italic tracking-tight">
+                                            <HelpCircle className="text-cyan-500 w-8 h-8" />
+                                            Client Clarifications Required
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {blueprint.client_questions.map((q: any, i: number) => (
+                                                <div key={i} className="bg-[#15121a] p-8 rounded-[2rem] border border-[#261E2E] shadow-sm hover:border-cyan-500/30 transition-all group relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <div className="relative z-10 space-y-4">
+                                                        <h4 className="text-lg font-bold text-white leading-relaxed">
+                                                            {q.question}
+                                                        </h4>
+                                                        <div className="inline-flex gap-2 p-3 bg-[#0f0c13] rounded-xl border border-[#261E2E] items-start w-full">
+                                                            <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                                            <p className="text-xs text-zinc-500 italic font-medium leading-relaxed">
+                                                                {q.reason}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

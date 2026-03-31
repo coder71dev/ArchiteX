@@ -22,7 +22,7 @@ use Stringable;
 #[Provider([Lab::Gemini, Lab::xAI, Lab::Groq])]
 #[Model('gemini-2.5-flash')]
 #[Timeout(180)]
-class BlueprintAgent implements Agent, Conversational, HasStructuredOutput, HasMiddleware, HasTools
+class BlueprintAgent implements Agent, Conversational, HasMiddleware, HasStructuredOutput, HasTools
 {
     use Promptable, RemembersConversations;
 
@@ -44,12 +44,15 @@ You MUST cover these dimensions in your output:
 7. Tech Stack Selection (With specific rationales and recommended alternatives)
 8. Frontend/Client Apps Flow Design (Mermaid diagram)
 9. Project Milestones & Roadmap
+10. Client Clarifications (Open questions)
 
 CRITICAL ANALYSIS RULES:
 - Identify underlying business risks and challenges from the brief.
 - Provide strategic, actionable suggestions for product success.
 - For every tech choice, explain the 'Why' (rationale) and suggest 'Next Best' alternatives.
 - Keep the technical considerations practical and grounded in the tech stack choices.
+- RIGHT-SIZE the architecture: Default to Monoliths or Majestic Monoliths for simple startups, side projects, or low-budget requests. NEVER suggest event-driven microservices unless explicitly justified by high scale, enterprise complexity, or global distribution needs.
+- Match Tech Stack choices with actual Team Capabilities provided in the prompt context.
 
 CRITICAL MERMAID GENERATION RULES:
 1. ALWAYS start the string with the diagram type (e.g., "graph TD", "erDiagram", "sequenceDiagram").
@@ -148,6 +151,12 @@ PROMPT;
                     'milestones' => $schema->array()->items($schema->string())->required(),
                 ])
             ),
+            'clientQuestions' => $schema->array()->items(
+                $schema->object([
+                    'question' => $schema->string()->required(),
+                    'reason' => $schema->string()->description('Why this needs clarification')->required(),
+                ])
+            )->required(),
             'reliabilityScore' => $schema->integer()->min(0)->max(100)->required(),
         ];
     }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Task extends Model
 {
     use HasUlids;
+
     protected $fillable = [
         'project_id',
         'blueprint_version',

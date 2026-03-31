@@ -20,7 +20,7 @@ return new class extends Migration
             // Drop the old integer foreign key constraint (if it exists)
             try {
                 $table->dropForeign(['assigned_to']);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Constraint may not exist on all DB drivers - safe to ignore
             }
 

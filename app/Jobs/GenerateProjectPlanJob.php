@@ -2,18 +2,17 @@
 
 namespace App\Jobs;
 
+use App\Ai\Workflows\Steps\GenerateBlueprint;
+use App\Ai\Workflows\Steps\GenerateParallelEstimateAndProposal;
+use App\Ai\Workflows\Steps\GenerateTasks;
 use App\Models\Project;
-use App\Models\TeamMember;
-use App\Ai\Agents\BlueprintAgent;
-use App\Ai\Agents\EstimatorAgent;
-use App\Ai\Agents\ProposalAgent;
-use App\Ai\Agents\TaskGeneratorAgent;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Pipeline;
 use Throwable;
 
 class GenerateProjectPlanJob implements ShouldQueue
@@ -47,11 +46,11 @@ class GenerateProjectPlanJob implements ShouldQueue
 
         try {
             $maxVersion = (int) ($project->blueprints()->max('version') ?? 0);
-            
-            // If it's a retry, we keep the same version. 
+
+            // If it's a retry, we keep the same version.
             // If it's an update from chat, we increment.
             // If it's pure initial generation, target is 1.
-            $targetVersion = match(true) {
+            $targetVersion = match (true) {
                 $this->isRetry => max(1, $maxVersion),
                 $this->isUpdate => ($maxVersion + 1),
                 default => 1
@@ -64,11 +63,11 @@ class GenerateProjectPlanJob implements ShouldQueue
                 'targetVersion' => $targetVersion,
             ];
 
-            \Illuminate\Support\Facades\Pipeline::send($payload)
+            Pipeline::send($payload)
                 ->through([
-                    \App\Ai\Workflows\Steps\GenerateBlueprint::class,
-                    \App\Ai\Workflows\Steps\GenerateParallelEstimateAndProposal::class,
-                    \App\Ai\Workflows\Steps\GenerateTasks::class,
+                    GenerateBlueprint::class,
+                    GenerateParallelEstimateAndProposal::class,
+                    GenerateTasks::class,
                 ])
                 ->then(fn ($payload) => $payload);
 
@@ -81,16 +80,16 @@ class GenerateProjectPlanJob implements ShouldQueue
             ]);
 
         } catch (Throwable $e) {
-            Log::error('Project Generation Failed: ' . $e->getMessage(), [
+            Log::error('Project Generation Failed: '.$e->getMessage(), [
                 'project_id' => $project->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             $project->update([
                 'status' => 'draft',
-                'error_message' => $e->getMessage()
+                'error_message' => $e->getMessage(),
             ]);
-            
+
             throw $e;
         }
     }
