@@ -822,19 +822,40 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                         Resource Commitment
                                                     </h3>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                                        {blueprint.master_plan.roleSummaries.map((role: any, i: number) => (
-                                                            <div key={i} className="bg-[#0f0c13] p-8 rounded-3xl border border-[#261E2E] hover:border-cyan-400/30 transition-all group relative overflow-hidden">
-                                                                <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-cyan-400/5 rounded-full blur-2xl group-hover:bg-cyan-400/10 transition-colors" />
-                                                                <div className="flex justify-between items-start mb-6">
-                                                                    <div className="p-3 bg-cyan-400/10 rounded-xl text-cyan-400 border border-cyan-400/20 group-hover:scale-110 transition-transform">
-                                                                        <Users className="w-5 h-5" />
+                                                        {tasks.filter((t: any) => t.assignee).length > 0 ? (
+                                                            Array.from(new Map(tasks.filter((t: any) => t.assignee).map((t: any) => [t.assignee.id, t.assignee])).values()).map((member: any, i: number) => {
+                                                                const memberTasks = tasks.filter((t: any) => t.assigned_to === member.id);
+                                                                const totalHours = memberTasks.reduce((sum: number, t: any) => sum + (t.estimated_hours || 0), 0);
+                                                                return (
+                                                                    <div key={i} className="bg-[#0f0c13] p-8 rounded-3xl border border-[#261E2E] hover:border-cyan-400/30 transition-all group relative overflow-hidden">
+                                                                        <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-cyan-400/5 rounded-full blur-2xl group-hover:bg-cyan-400/10 transition-colors" />
+                                                                        <div className="flex justify-between items-start mb-6">
+                                                                            <div className="p-3 bg-cyan-400/10 rounded-xl text-cyan-400 border border-cyan-400/20 group-hover:scale-110 transition-transform">
+                                                                                <Users className="w-5 h-5" />
+                                                                            </div>
+                                                                            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest italic">{memberTasks.length} Units</span>
+                                                                        </div>
+                                                                        <h4 className="text-white font-black uppercase italic tracking-tight mb-1 text-sm">{member.name}</h4>
+                                                                        <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest italic block mb-3">{member.role}</span>
+                                                                        <div className="text-3xl font-black text-white italic tracking-tighter">{totalHours}H</div>
                                                                     </div>
-                                                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest italic">{role.totalTasks} Units</span>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            blueprint.master_plan.roleSummaries.map((role: any, i: number) => (
+                                                                <div key={i} className="bg-[#0f0c13] p-8 rounded-3xl border border-[#261E2E] hover:border-cyan-400/30 transition-all group relative overflow-hidden">
+                                                                    <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-cyan-400/5 rounded-full blur-2xl group-hover:bg-cyan-400/10 transition-colors" />
+                                                                    <div className="flex justify-between items-start mb-6">
+                                                                        <div className="p-3 bg-cyan-400/10 rounded-xl text-cyan-400 border border-cyan-400/20 group-hover:scale-110 transition-transform">
+                                                                            <Users className="w-5 h-5" />
+                                                                        </div>
+                                                                        <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest italic">{role.totalTasks} Units</span>
+                                                                    </div>
+                                                                    <h4 className="text-white font-black uppercase italic tracking-tight mb-1 text-sm">{role.role.replace(/^(Junior|Senior|Sr\.|Jr\.)\s+/i, '')}</h4>
+                                                                    <div className="text-3xl font-black text-white italic tracking-tighter">{role.totalHours}</div>
                                                                 </div>
-                                                                <h4 className="text-white font-black uppercase italic tracking-tight mb-1 text-sm">{role.role}</h4>
-                                                                <div className="text-3xl font-black text-white italic tracking-tighter">{role.totalHours}</div>
-                                                            </div>
-                                                        ))}
+                                                            ))
+                                                        )}
                                                     </div>
                                                 </div>
 
