@@ -149,7 +149,10 @@ PROMPT;
                 $schema->object([
                     'title' => $schema->string()->description('Milestone name')->required(),
                     'description' => $schema->string()->required(),
+                    'goal' => $schema->string()->description('What this milestone achieves')->required(),
+                    'deliverables' => $schema->array()->items($schema->string())->description('Specific deliverables for this milestone')->required(),
                     'target_week' => $schema->integer()->description('Estimated week number for delivery')->required(),
+                    'deadline' => $schema->string()->description('Suggested deadline date (YYYY-MM-DD)')->required(),
                 ])
             )->required(),
             'roadmap' => $schema->array()->items(

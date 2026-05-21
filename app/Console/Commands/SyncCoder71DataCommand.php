@@ -61,11 +61,13 @@ class SyncCoder71DataCommand extends Command
 
                     $role = $staff['job_title'] ?? 'Team Member';
                     $isActive = isset($staff['status']) && $staff['status'] === 'active';
+                    $stack = $this->inferStackFromRole($role);
 
                     if ($member) {
                         // Update basic info without overriding skills and availability
                         $member->update([
                             'role' => $role,
+                            'stack' => $stack,
                             'is_active' => $isActive,
                         ]);
                         $updated++;
@@ -74,6 +76,7 @@ class SyncCoder71DataCommand extends Command
                         TeamMember::create([
                             'name' => $name,
                             'role' => $role,
+                            'stack' => $stack,
                             'is_active' => $isActive,
                             'skills' => [],
                             'availability_hours' => 8,
@@ -89,6 +92,42 @@ class SyncCoder71DataCommand extends Command
         } catch (\Exception $e) {
             $this->error('Error syncing staffs: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Infer stack category from a job title/role string.
+     */
+    private function inferStackFromRole(?string $role): string
+    {
+        if (! $role) {
+            return 'other';
+        }
+
+        $r = strtolower($role);
+
+        if (str_contains($r, 'frontend') || str_contains($r, 'react') || str_contains($r, 'vue')) {
+            return 'frontend';
+        }
+        if (str_contains($r, 'backend') || str_contains($r, 'software engineer') || str_contains($r, 'php') || str_contains($r, 'laravel')) {
+            return 'backend';
+        }
+        if (str_contains($r, 'flutter') || str_contains($r, 'mobile') || str_contains($r, 'ios') || str_contains($r, 'android')) {
+            return 'mobile';
+        }
+        if (str_contains($r, 'ui') || str_contains($r, 'ux') || str_contains($r, 'design')) {
+            return 'design';
+        }
+        if (str_contains($r, 'devops') || str_contains($r, 'infrastructure') || str_contains($r, 'aws') || str_contains($r, 'docker')) {
+            return 'devops';
+        }
+        if (str_contains($r, 'qa') || str_contains($r, 'test')) {
+            return 'qa';
+        }
+        if (str_contains($r, 'full-stack') || str_contains($r, 'fullstack')) {
+            return 'backend'; // Default to backend for fullstack
+        }
+
+        return 'other';
     }
 
     private function syncActivities()

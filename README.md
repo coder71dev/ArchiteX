@@ -56,7 +56,7 @@ ArchiteX employs a team of specialized AI agents working in background synchroni
 1. `composer install`
 2. `npm install && npm run dev`
 3. `php artisan migrate --seed`
-4. `php artisan queue:work` (Required for AI background job processing)
+4. All AI processing runs synchronously — no queue worker needed
 
 ---
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\GenerateProjectPlanJob;
+use App\Jobs\GenerateQuestionsJob;
 use App\Models\Project;
 use App\Models\TeamMember;
 use App\Services\ResourceAllocationService;
@@ -33,7 +33,6 @@ class ProjectController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // 1. Create the project
         $project = Project::create([
             'user_id' => Auth::id(),
             'title' => 'Analyzing Requirements...',
@@ -45,22 +44,34 @@ class ProjectController extends Controller
             'notes' => $request->notes,
             'status' => 'planning',
             'current_phase' => 'initializing',
+            'planning_phase' => 'idea_submitted',
         ]);
 
-        // 2. Dispatch Background Job
-        GenerateProjectPlanJob::dispatch($project, $request->brief);
+        GenerateQuestionsJob::dispatchSync($project);
 
-        return redirect()->route('projects.show', $project->id);
+        return redirect()->route('projects.questions', $project->id);
     }
 
     public function show(Project $project)
     {
+        // Redirect to wizard if project is not yet active
+        if ($project->planning_phase !== 'active') {
+            return match ($project->planning_phase) {
+                'idea_submitted', 'clarifying_questions' => redirect()->route('projects.questions', $project->id),
+                'questions_answered', 'plan_generating', 'plan_ready' => redirect()->route('projects.milestones', $project->id),
+                'milestones_ready' => redirect()->route('projects.tasks', $project->id),
+                'tasks_ready', 'team_assigned' => redirect()->route('projects.team', $project->id),
+                default => null,
+            };
+        }
+
         return Inertia::render('Projects/Show', [
             'project' => $project->load([
                 'blueprints' => fn ($q) => $q->orderBy('version', 'desc'),
                 'estimates' => fn ($q) => $q->latest(),
                 'proposals' => fn ($q) => $q->latest(),
                 'tasks.assignee',
+                'milestones' => fn ($q) => $q->orderBy('sort_order'),
             ]),
             'team' => TeamMember::where('is_active', true)->get(),
             'messages' => $project->conversation_id
@@ -84,11 +95,11 @@ class ProjectController extends Controller
             'current_phase' => $request->retry ? $project->current_phase : 'updating',
         ]);
 
-        // Dispatch Update Job
-        GenerateProjectPlanJob::dispatch(
+        // Run plan update synchronously
+        GenerateProjectPlanJob::dispatchSync(
             $project,
             $request->message,
-            $request->retry ? false : true, // If retry, isUpdate is false (to keep same version)
+            $request->retry ? false : true,
             $request->retry ?? false
         );
 

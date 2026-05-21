@@ -77,6 +77,7 @@ class GenerateProjectPlanJob implements ShouldQueue
             $project->update([
                 'status' => 'proposed',
                 'current_phase' => 'completed',
+                'planning_phase' => 'plan_ready',
                 'error_message' => null,
                 'latest_status_message' => null,
             ]);

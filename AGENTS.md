@@ -1,6 +1,71 @@
 <laravel-boost-guidelines>
 === foundation rules ===
 
+# CRITICAL: Data Destruction Prohibition
+
+## NEVER Run Destructive Commands Without Explicit Confirmation
+
+The following commands MUST NEVER be executed without the user's explicit, written confirmation in the SAME conversation thread:
+
+- `php artisan migrate:fresh` (with or without `--seed`)
+- `php artisan migrate:rollback`
+- `php artisan migrate:reset`
+- `php artisan db:wipe`
+- Any custom script or raw SQL that drops, truncates, or deletes tables/rows
+- Any command that deletes or overwrites the `database.sqlite` file directly
+
+## What "Explicit Confirmation" Requires
+
+1. The user must explicitly type a confirmation like **"yes, run migrate:fresh"** or **"confirmed"**
+2. Implicit approval, silence, or context-based assumptions are NOT sufficient
+3. If unsure, always ask: *"This will delete all data in [database name]. Are you sure? Type 'yes' to confirm."*
+4. If the user does not respond with an explicit confirmation, DO NOT proceed
+
+## Why This Rule Exists
+
+- Tests using `RefreshDatabase` on SQLite can trigger destructive DDL on the FILE database when configuration overlaps (despite `phpunit.xml` specifying `:memory:`)
+- SQLite file databases share the same connection pool; test rollbacks can affect the main DB if `DB_DATABASE` is not strictly isolated
+- Accidental data loss is irreversible without backups
+
+## CRITICAL: `config:cache` + Tests = Data Loss
+
+**Running `php artisan config:cache` in local development will cause tests to wipe the main database.**
+
+### How It Happens
+1. `php artisan config:cache` creates `bootstrap/cache/config.php` with the **local** database path (`database/database.sqlite`)
+2. When tests run, PHPUnit sets `DB_DATABASE=:memory:` in `phpunit.xml`
+3. BUT Laravel's `RefreshDatabase` trait reads `config('database.connections.sqlite.database')` — which returns the **cached file path**, not `:memory:`
+4. `RefreshDatabase` thinks it's using a file database → runs `migrate:fresh` → **wipes all production data**
+
+### Prevention
+- **NEVER run `php artisan config:cache` in local development** unless explicitly requested
+- **Before running ANY tests**, verify `bootstrap/cache/config.php` does NOT exist:
+  ```bash
+  Test-Path bootstrap/cache/config.php   # Should return FALSE
+  ```
+- If config cache exists, clear it BEFORE running tests:
+  ```bash
+  php artisan config:clear
+  ```
+- After clearing cache, verify the database is intact before running tests
+
+### What To Do If Tests Need To Run
+1. Check `bootstrap/cache/config.php` exists — if yes, run `php artisan config:clear`
+2. Run a single test first to verify it uses `:memory:` (create a dummy test that asserts `config('database.connections.sqlite.database') === ':memory:'`)
+3. Only then run the full test suite
+
+## Exception
+
+NONE. There is no exception to this rule, even if:
+- The user says "fix the database"
+- The user says "start over"
+- The user says "reset everything"
+- Tests are failing due to migration issues
+
+Always clarify and get explicit confirmation first.
+
+---
+
 # Laravel Boost Guidelines
 
 The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.

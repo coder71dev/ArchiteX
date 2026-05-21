@@ -1,7 +1,6 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
-import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
-import { Plus, Layout, Clock, User, ArrowRight, Zap, Target, Shield, LogOut, FileText } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Plus, Layout, Clock, User, ArrowRight, Zap, Target, Shield, LogOut } from 'lucide-react';
 
 import { PageProps } from '@inertiajs/core';
 
@@ -10,6 +9,7 @@ interface Project {
     title: string;
     brief: string;
     status: string;
+    planning_phase: string;
     client_name: string;
     created_at: string;
     latest_blueprint?: {
@@ -35,22 +35,6 @@ interface Props extends PageProps {
 
 
 export default function Dashboard({ projects }: Props) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        brief: '',
-        client_name: '',
-        budget: '',
-        timeline: '',
-        target_audience: '',
-        notes: '',
-    });
-
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(route('projects.store'), {
-            onSuccess: () => reset(),
-        });
-    };
-
     return (
         <div className="min-h-screen bg-[#0f0c13] text-white selection:bg-[#F93A8B]/30">
             <Head title="Architect Dashboard" />
@@ -58,6 +42,8 @@ export default function Dashboard({ projects }: Props) {
                 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
                 h1, h2, h3, h4, h5, h6, .font-outfit { font-family: 'Outfit', sans-serif !important; }
                 body { font-family: 'Space Grotesk', sans-serif; }
+                .btn-accent { background: linear-gradient(135deg, #F93A8B 0%, #c033d6 100%); color: white; display: flex; align-items: center; border-radius: 0.75rem; font-weight: bold; transition: all 0.3s; }
+                .btn-accent:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 10px 20px -10px rgba(249, 58, 139, 0.5); }
             ` }} />
 
             {/* Sidebar / Navigation */}
@@ -89,108 +75,28 @@ export default function Dashboard({ projects }: Props) {
                         <h1 className="text-4xl font-extrabold tracking-tight mb-2">
                             Hello, <span className="gradient-text">{usePage<Props>().props.auth.user.name.split(' ')[0]}</span>
                         </h1>
-                        <p className="text-zinc-400 text-lg">Welcome to ArchiteX. Start a new project or manage your existing blueprints.</p>
+                        <p className="text-zinc-400 text-lg">Welcome to ArchiteX. Start a new project or manage your existing plans.</p>
                     </header>
 
-                    {/* New Project Form */}
+                    {/* New Project CTA */}
                     <section className="mb-16 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-                        <div className="glass p-8 rounded-2xl relative overflow-hidden group">
+                        <Link href={route('projects.create')} className="glass p-8 rounded-2xl relative overflow-hidden group block hover:border-[#F93A8B]/30 transition-all">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-[#F93A8B]/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-[#F93A8B]/10 transition-colors duration-700"></div>
                             
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                                <Plus className="text-[#F93A8B] w-6 h-6" />
-                                Initiate New Project
-                            </h2>
-
-                            <form onSubmit={submit} className="space-y-6 relative z-10">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Client Name</label>
-                                        <input
-                                            type="text"
-                                            value={data.client_name}
-                                            onChange={e => setData('client_name', e.target.value)}
-                                            placeholder="e.g. Acme Corp"
-                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Budget</label>
-                                        <input
-                                            type="text"
-                                            value={data.budget}
-                                            onChange={e => setData('budget', e.target.value)}
-                                            placeholder="e.g. $10k - $20k"
-                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Required Timeframe</label>
-                                        <input
-                                            type="text"
-                                            value={data.timeline}
-                                            onChange={e => setData('timeline', e.target.value)}
-                                            placeholder="e.g. June 2026 or 3 Months"
-                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-zinc-400 ml-1">Target Audience & Region</label>
-                                        <input
-                                            type="text"
-                                            value={data.target_audience}
-                                            onChange={e => setData('target_audience', e.target.value)}
-                                            placeholder="e.g. B2B, US only"
-                                            className="w-full bg-[#1a1523] border-[#261E2E] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600"
-                                        />
-                                    </div>
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+                                        <Plus className="text-[#F93A8B] w-6 h-6" />
+                                        Start a New Project
+                                    </h2>
+                                    <p className="text-zinc-400">Describe your idea, answer a few questions, and get a full project plan in minutes.</p>
                                 </div>
-                                
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <label className="text-sm font-semibold text-zinc-400">Project Brief & Requirements</label>
-                                        <span className="text-[10px] font-bold text-zinc-600 flex items-center gap-1">
-                                            <FileText className="w-2.5 h-2.5" />
-                                            Markdown Supported
-                                        </span>
-                                    </div>
-                                    <textarea
-                                        required
-                                        value={data.brief}
-                                        onChange={e => setData('brief', e.target.value)}
-                                        placeholder="Describe goals, tech stack, and features. Markdown is supported and detailed briefs improve blueprint accuracy by 40%."
-                                        rows={6}
-                                        className="w-full bg-[#1a1523]/80 border-[#261E2E] rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600 font-mono text-sm leading-relaxed min-h-[160px]"
-                                    ></textarea>
-                                    {errors.brief && <p className="text-rose-500 text-sm">{errors.brief}</p>}
+                                <div className="btn-accent px-6 py-3">
+                                    Start Planning
+                                    <ArrowRight className="w-4 h-4 ml-2" />
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-zinc-400 ml-1">Additional Notes</label>
-                                    <textarea
-                                        value={data.notes}
-                                        onChange={e => setData('notes', e.target.value)}
-                                        placeholder="Constraints, integrations, legacy code context, or anything that helps contextualize the build..."
-                                        rows={3}
-                                        className="w-full bg-[#1a1523]/80 border-[#261E2E] rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none transition-all placeholder:text-zinc-600 font-mono text-sm leading-relaxed"
-                                    ></textarea>
-                                </div>
-
-                                <div className="flex justify-end pt-2">
-                                    <button 
-                                        disabled={processing}
-                                        className="btn-accent px-8 justify-center h-[52px]"
-                                    >
-                                        {processing ? 'Processing Requirements...' : (
-                                            <>
-                                                Generate Blueprint
-                                                <ArrowRight className="w-4 h-4 ml-2" />
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                        </Link>
                     </section>
 
                     {/* Projects Grid */}
@@ -212,11 +118,11 @@ export default function Dashboard({ projects }: Props) {
                                             <Target className="w-5 h-5" />
                                         </div>
                                         <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider ${
-                                            project.status === 'planning' ? 'bg-[#F3B323]/10 text-[#F3B323] border border-[#F3B323]/20' :
-                                            project.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                                            'bg-[#F93A8B]/10 text-[#F93A8B] border border-[#F93A8B]/20'
+                                            project.planning_phase === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                                            project.planning_phase === 'completed' ? 'bg-[#F93A8B]/10 text-[#F93A8B] border border-[#F93A8B]/20' :
+                                            'bg-[#F3B323]/10 text-[#F3B323] border border-[#F3B323]/20'
                                         }`}>
-                                            {project.status}
+                                            {project.planning_phase === 'active' ? 'Active' : project.planning_phase === 'completed' ? 'Completed' : 'Planning'}
                                         </span>
                                     </div>
 

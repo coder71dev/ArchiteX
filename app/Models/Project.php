@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
 {
-    use HasUlids;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
         'user_id',
@@ -15,6 +16,7 @@ class Project extends Model
         'brief',
         'status',
         'current_phase',
+        'planning_phase',
         'error_message',
         'client_name',
         'target_deadline',
@@ -24,11 +26,13 @@ class Project extends Model
         'timeline',
         'target_audience',
         'notes',
+        'clarifying_questions',
     ];
 
     protected $casts = [
         'id' => 'string',
         'status' => 'string',
+        'clarifying_questions' => 'array',
     ];
 
     public function user()
@@ -69,5 +73,15 @@ class Project extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function milestones()
+    {
+        return $this->hasMany(Milestone::class)->orderBy('sort_order');
+    }
+
+    public function integrations()
+    {
+        return $this->hasMany(Integration::class);
     }
 }

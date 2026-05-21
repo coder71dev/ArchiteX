@@ -1,0 +1,16 @@
+node_modules
+vendor
+.git
+public/uploads
+public/images
+bootstrap/cache
+bootstrap/ssr
+storage
+graphify-out
+.kiro
+.qoder
+.claude
+.cursor
+.gemini
+.vscode
+.planning

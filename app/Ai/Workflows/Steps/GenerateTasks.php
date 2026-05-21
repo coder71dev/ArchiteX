@@ -5,6 +5,7 @@ namespace App\Ai\Workflows\Steps;
 use App\Ai\Agents\TaskGeneratorAgent;
 use App\Models\Project;
 use Closure;
+use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 
 class GenerateTasks
@@ -27,40 +28,96 @@ class GenerateTasks
 
         $project->update(['current_phase' => 'tasks']);
 
+        // 1. Ensure milestones exist from blueprint
+        $this->ensureMilestonesExist($project, $targetVersion);
+
+        // 2. Generate hierarchical tasks via AI
         $taskAgent = (new TaskGeneratorAgent)->continue($project->conversation_id, $user);
-        $taskPrompt = "Generate granular, assignable developer tasks for the team based on blueprint v{$targetVersion}. Ensure every task is pinned to a milestone.";
+        $taskPrompt = "Generate a hierarchical task breakdown for blueprint v{$targetVersion}. Create parent tasks per milestone with child tasks and checklists. Available team context will be used for assignment later.";
 
         /** @var StructuredAgentResponse $taskResponse */
         $taskResponse = $taskAgent->prompt($taskPrompt);
         $taskData = $taskResponse->structured;
-        $rawTasks = $taskData['task_list'] ?? [];
+        $taskGroups = $taskData['task_groups'] ?? [];
 
-        foreach ($rawTasks as $rawTaskString) {
-            $parts = explode('|', $rawTaskString);
+        $milestones = $project->milestones()->orderBy('sort_order')->get();
 
-            $title = trim($parts[0] ?? 'New Task');
-            $description = trim($parts[1] ?? 'Follow-up requirement');
-            $priority = trim($parts[2] ?? 'medium');
-            $hours = (float) ($parts[3] ?? 0);
-            $milestoneIndex = (int) ($parts[4] ?? 0);
-            $dueDate = trim($parts[5] ?? null);
-            $rawAssignee = trim($parts[6] ?? null);
-            $assigneeId = (! empty($rawAssignee)) ? $rawAssignee : null;
+        foreach ($taskGroups as $group) {
+            $milestoneIndex = (int) ($group['milestone_index'] ?? 0);
+            $milestone = $milestones->get($milestoneIndex);
 
-            $project->tasks()->create([
+            if (! $milestone) {
+                Log::warning("GenerateTasks: Milestone index {$milestoneIndex} not found for project {$project->id}");
+
+                continue;
+            }
+
+            $parentData = $group['parent_task'] ?? [];
+
+            // Create parent task
+            $parentTask = $project->tasks()->create([
                 'blueprint_version' => $targetVersion,
-                'title' => $title,
-                'description' => $description,
-                'priority' => $priority,
+                'milestone_id' => $milestone->id,
+                'parent_id' => null,
+                'title' => $parentData['title'] ?? 'Untitled Feature',
+                'description' => $parentData['description'] ?? '',
+                'stack' => $parentData['stack'] ?? 'other',
+                'priority' => 'high',
                 'status' => 'backlog',
-                'estimated_hours' => $hours,
+                'estimated_hours' => $parentData['estimated_hours'] ?? 0,
                 'milestone_index' => $milestoneIndex,
-                'due_date' => $dueDate ?: null,
-                'assigned_to' => $assigneeId,
                 'phase' => 'Execution',
             ]);
+
+            // Create child tasks
+            foreach ($group['child_tasks'] ?? [] as $childData) {
+                $project->tasks()->create([
+                    'blueprint_version' => $targetVersion,
+                    'milestone_id' => $milestone->id,
+                    'parent_id' => $parentTask->id,
+                    'title' => $childData['title'] ?? 'Untitled Task',
+                    'description' => $childData['description'] ?? '',
+                    'stack' => $childData['stack'] ?? 'other',
+                    'priority' => $childData['priority'] ?? 'medium',
+                    'status' => 'backlog',
+                    'estimated_hours' => $childData['estimated_hours'] ?? 0,
+                    'milestone_index' => $milestoneIndex,
+                    'checklist_items' => $childData['checklist_items'] ?? [],
+                    'completed_checklist' => [],
+                    'phase' => 'Execution',
+                ]);
+            }
         }
 
         return $next($payload);
+    }
+
+    /**
+     * Create milestone records from blueprint data if they don't exist.
+     */
+    private function ensureMilestonesExist(Project $project, int $targetVersion): void
+    {
+        $existingMilestones = $project->milestones()->exists();
+
+        if ($existingMilestones) {
+            return;
+        }
+
+        $blueprint = $project->blueprints()->where('version', $targetVersion)->first();
+
+        if (! $blueprint || empty($blueprint->milestones)) {
+            return;
+        }
+
+        foreach ($blueprint->milestones as $index => $milestoneData) {
+            $project->milestones()->create([
+                'title' => $milestoneData['title'] ?? "Milestone {$index}",
+                'description' => $milestoneData['description'] ?? '',
+                'goal' => $milestoneData['goal'] ?? '',
+                'deliverables' => $milestoneData['deliverables'] ?? [],
+                'deadline' => $milestoneData['deadline'] ?? null,
+                'sort_order' => $index,
+            ]);
+        }
     }
 }

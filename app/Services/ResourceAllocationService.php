@@ -3,14 +3,16 @@
 namespace App\Services;
 
 use App\Models\Task;
+use App\Models\TaskAssignmentLog;
 use App\Models\TeamMember;
+use Illuminate\Support\Collection;
 
 class ResourceAllocationService
 {
     /**
-     * Auto-assign tasks for a given project based on skills and availability.
+     * Auto-assign tasks for a given project based on stack and availability.
      */
-    public function autoAssignTasks(string $projectId)
+    public function autoAssignTasks(string $projectId): array
     {
         $tasks = Task::where('project_id', $projectId)
             ->whereNull('assigned_to')
@@ -23,17 +25,17 @@ class ResourceAllocationService
         $teamMembers = TeamMember::where('is_active', true)->get();
         $assignedCount = 0;
 
-        // Track role allocations for this project to ensure 1 person per stack
+        // Track stack allocations for this project (1 person per stack)
         $stackAllocations = [];
-        
-        $assignedTasks = Task::with('assignee')->where('project_id', $projectId)
+
+        $assignedTasks = Task::with('assignee')
+            ->where('project_id', $projectId)
             ->whereNotNull('assigned_to')
             ->get();
-            
+
         foreach ($assignedTasks as $t) {
-            if ($t->assignee && $t->assignee->role) {
-                $stack = $this->normalizeStack($t->assignee->role);
-                $stackAllocations[$stack] = $t->assignee->id;
+            if ($t->assignee && $t->assignee->stack) {
+                $stackAllocations[$t->assignee->stack] = $t->assignee->id;
             }
         }
 
@@ -42,12 +44,14 @@ class ResourceAllocationService
 
             if ($bestMember) {
                 $task->update(['assigned_to' => $bestMember->id]);
-                if ($bestMember->role) {
-                    $stack = $this->normalizeStack($bestMember->role);
-                    $stackAllocations[$stack] = $bestMember->id;
-                }
+                $stackAllocations[$task->stack] = $bestMember->id;
                 $assignedCount++;
             }
+        }
+
+        // Update workload for all assigned members
+        foreach ($stackAllocations as $memberId) {
+            $this->updateMemberWorkload($memberId);
         }
 
         return [
@@ -57,59 +61,53 @@ class ResourceAllocationService
     }
 
     /**
-     * Find the best team member based on matching skills, availability, and strict stack limits.
+     * Find the best team member for a task based on stack matching and availability.
      */
-    private function findBestMemberForTask(Task $task, $teamMembers, array $stackAllocations)
+    private function findBestMemberForTask(Task $task, Collection $teamMembers, array $stackAllocations): ?TeamMember
     {
-        $taskText = strtolower($task->title.' '.$task->description);
-
+        $taskStack = $task->stack ?? 'other';
         $bestMember = null;
         $highestScore = -1;
 
         foreach ($teamMembers as $member) {
             $score = 0;
-            $matchCount = 0;
+            $memberStack = $member->stack ?? 'other';
 
-            // 1. Skill Matching Score
-            $skills = $member->skills ?? [];
-            foreach ($skills as $skill) {
-                if (stripos($taskText, trim($skill)) !== false) {
-                    $score += 100; // Strong weight per skill
-                    $matchCount++;
-                }
+            // 1. Stack Match (highest priority)
+            if ($memberStack === $taskStack) {
+                $score += 1000;
+            } elseif ($memberStack === 'fullstack' && in_array($taskStack, ['frontend', 'backend'])) {
+                $score += 500;
             }
-
-            if ($matchCount === 0) {
-                continue; // Must match at least one skill
-            }
-
-            $memberStack = $this->normalizeStack($member->role);
 
             // 2. Strict Stack Allocation Check
-            // If someone else already owns this stack on this project, disqualify!
-            if (isset($stackAllocations[$memberStack]) && $stackAllocations[$memberStack] !== $member->id) {
+            if (isset($stackAllocations[$taskStack]) && $stackAllocations[$taskStack] !== $member->id) {
                 continue;
             }
 
-            // If this member already owns this stack on this project, huge bonus PER matched skill
-            // This prevents a backend dev (who might match 1 frontend skill) from stealing a frontend task
-            // from the frontend dev (who matches 3 frontend skills)
-            if (isset($stackAllocations[$memberStack]) && $stackAllocations[$memberStack] === $member->id) {
-                $score += (10000 * $matchCount);
+            // 3. Bonus if already owns this stack on this project
+            if (isset($stackAllocations[$taskStack]) && $stackAllocations[$taskStack] === $member->id) {
+                $score += 10000;
             }
 
-            // 3. Workload Availability Score
-            $currentWorkload = Task::where('assigned_to', $member->id)
-                ->whereIn('status', ['todo', 'in_progress'])
-                ->sum('estimated_hours');
+            // 4. Skill Matching (secondary)
+            $skills = $member->skills ?? [];
+            $taskText = strtolower($task->title.' '.$task->description);
+            foreach ($skills as $skill) {
+                if (stripos($taskText, trim($skill)) !== false) {
+                    $score += 50;
+                }
+            }
 
+            // 5. Workload Availability
+            $currentWorkload = $this->getWorkloadHours($member->id);
             $availableHours = max(0, $member->availability_hours - $currentWorkload);
             $taskHours = $task->estimated_hours ?? 1;
 
             if ($availableHours < $taskHours) {
-                $score -= 50; // Penalize, but don't disqualify, as they still "own" the stack
+                $score -= 100; // Strong penalty for over-allocation
             } else {
-                $score += ($availableHours / 10);
+                $score += ($availableHours / 5);
             }
 
             if ($score > $highestScore) {
@@ -122,19 +120,78 @@ class ResourceAllocationService
     }
 
     /**
-     * Normalize roles into distinct stacks (frontend, backend, design, etc.)
+     * Calculate workload for a team member.
      */
-    private function normalizeStack(?string $role): string
+    public function calculateWorkload(string $memberId): array
     {
-        if (!$role) return 'general';
-        $r = strtolower($role);
-        
-        if (str_contains($r, 'frontend')) return 'frontend';
-        if (str_contains($r, 'backend') || str_contains($r, 'software engineer')) return 'backend';
-        if (str_contains($r, 'ui') || str_contains($r, 'ux') || str_contains($r, 'design')) return 'design';
-        if (str_contains($r, 'flutter') || str_contains($r, 'app') || str_contains($r, 'mobile')) return 'mobile';
-        if (str_contains($r, 'full-stack') || str_contains($r, 'fullstack')) return 'fullstack';
-        
-        return 'general';
+        $used = $this->getWorkloadHours($memberId);
+        $member = TeamMember::find($memberId);
+        $total = $member?->availability_hours ?? 0;
+
+        return [
+            'used' => (float) $used,
+            'total' => $total,
+            'percentage' => $total > 0 ? round(($used / $total) * 100, 1) : 0,
+            'is_overallocated' => $used > $total,
+        ];
+    }
+
+    /**
+     * Reassign a task to a new team member with audit logging.
+     */
+    public function reassignTask(Task $task, string $newMemberId, string $reason = ''): void
+    {
+        $oldMemberId = $task->assigned_to;
+
+        $task->update(['assigned_to' => $newMemberId]);
+
+        TaskAssignmentLog::create([
+            'task_id' => $task->id,
+            'from_member_id' => $oldMemberId,
+            'to_member_id' => $newMemberId,
+            'reason' => $reason,
+            'changed_by' => auth()->id(),
+        ]);
+
+        // Recalculate workloads
+        if ($oldMemberId) {
+            $this->updateMemberWorkload($oldMemberId);
+        }
+        $this->updateMemberWorkload($newMemberId);
+    }
+
+    /**
+     * Get workload data for all active team members.
+     */
+    public function getTeamWorkload(): Collection
+    {
+        return TeamMember::where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($member) {
+                return array_merge(
+                    ['id' => $member->id, 'name' => $member->name, 'role' => $member->role, 'stack' => $member->stack],
+                    $this->calculateWorkload($member->id)
+                );
+            });
+    }
+
+    /**
+     * Update the cached workload_hours for a team member.
+     */
+    public function updateMemberWorkload(string $memberId): void
+    {
+        $used = $this->getWorkloadHours($memberId);
+        TeamMember::where('id', $memberId)->update(['current_workload_hours' => $used]);
+    }
+
+    /**
+     * Get raw workload hours for a member.
+     */
+    private function getWorkloadHours(string $memberId): float
+    {
+        return (float) Task::where('assigned_to', $memberId)
+            ->whereIn('status', ['todo', 'in_progress'])
+            ->sum('estimated_hours');
     }
 }

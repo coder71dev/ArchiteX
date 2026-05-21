@@ -6,7 +6,8 @@ import {
     Layers, FileText, CheckSquare, Users, 
     Maximize2, Download, RefreshCcw, Sparkles,
     ZoomIn, X, AlertCircle, Lightbulb, Shield,
-    Calendar, Flag, Briefcase, ChevronDown, ChevronUp, HelpCircle, FileCode
+    Calendar, Flag, Briefcase, ChevronDown, ChevronUp, HelpCircle, FileCode,
+    Target
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
@@ -340,11 +341,10 @@ export default function Show({ project, team, messages }: ProjectProps) {
                         <div className="absolute inset-0 bg-[#F93A8B]/10/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                         {[
                             { id: 'implementation', label: 'Master Plan', icon: FileCode },
+                            { id: 'milestones', label: 'Milestones', icon: Calendar },
                             { id: 'blueprint', label: 'Architecture', icon: Layers },
                             { id: 'estimate', label: 'Estimations', icon: Clock },
                             { id: 'proposal', label: 'Proposal', icon: FileText },
-                            { id: 'tasks', label: 'Sync Board', icon: CheckSquare },
-                            { id: 'team', label: 'Neural Team', icon: Users },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -686,68 +686,108 @@ export default function Show({ project, team, messages }: ProjectProps) {
                         {/* Estimate Tab */}
                         {activeTab === 'estimate' && (
                             <div className="space-y-10">
-                                <header className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#F93A8B]/10 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Resource Commitment</span>
-                                        <div className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-end gap-2">
-                                            {estimate.total_hours}
-                                            <span className="text-sm text-zinc-600 mb-1">Hours</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#F93A8B]/10 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Evolution Cycle</span>
-                                        <div className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-end gap-2">
-                                            {estimate.duration_weeks}
-                                            <span className="text-sm text-zinc-600 mb-1">Weeks</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Neural Flux Buffer</span>
-                                        <div className="text-4xl font-black text-emerald-600 uppercase italic tracking-tighter flex items-end gap-2">
-                                            +{estimate.risk_buffer_percent}%
-                                        </div>
-                                    </div>
-                                </header>
+                                {(() => {
+                                    // Calculate real data from actual tasks
+                                    const realTotalHours = tasks.reduce((sum: number, t: any) => sum + (t.estimated_hours || 0), 0);
+                                    const firstMilestone = project.milestones?.[0];
+                                    const lastMilestone = project.milestones?.[project.milestones.length - 1];
+                                    const realWeeks = firstMilestone && lastMilestone
+                                        ? Math.ceil((new Date(lastMilestone.deadline).getTime() - new Date(firstMilestone.deadline).getTime()) / (1000 * 60 * 60 * 24 * 7))
+                                        : (estimate.duration_weeks || 0);
+                                    // Real phase breakdown from milestones
+                                    const realPhaseBreakdown = project.milestones?.map((m: any) => {
+                                        const mTasks = tasks.filter((t: any) => t.milestone_id === m.id);
+                                        const mHours = mTasks.reduce((sum: number, t: any) => sum + (t.estimated_hours || 0), 0);
+                                        return { phase: m.title, hours: mHours };
+                                    }) || [];
+                                    // Real team composition from actual assigned members
+                                    const assignedMembers = team.filter((m: any) => tasks.some((t: any) => t.assignee?.id === m.id));
+                                    const realTeamComposition = assignedMembers.map((m: any) => {
+                                        const memberTasks = tasks.filter((t: any) => t.assignee?.id === m.id);
+                                        const memberHours = memberTasks.reduce((sum: number, t: any) => sum + (t.estimated_hours || 0), 0);
+                                        return { role: m.role, count: 1, hours_per_day: Math.round(memberHours / (realWeeks * 5)) || 0, name: m.name };
+                                    });
+                                    // If no assigned members, show all team members with 0 hours
+                                    const displayTeam = realTeamComposition.length > 0 ? realTeamComposition : team.map((m: any) => ({
+                                        role: m.role, count: 1, hours_per_day: 0, name: m.name
+                                    }));
 
-                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
-                                    <div className="space-y-6">
-                                        <h3 className="font-bold text-lg">Resource Allocation</h3>
-                                        <div className="space-y-4">
-                                            {estimate.team_composition?.map((t: any, i: number) => (
-                                                <div key={i} className="flex items-center justify-between p-4 bg-[#1a1523] rounded-xl border border-[#261E2E]">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-[#e73681]/10 text-[#F93A8B]/80 flex items-center justify-center font-bold">
-                                                            {t.count}
-                                                        </div>
-                                                        <span className="font-semibold">{t.role}</span>
+                                    return (
+                                        <>
+                                            <header className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
+                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#F93A8B]/10 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Total Hours</span>
+                                                    <div className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-end gap-2">
+                                                        {realTotalHours}
+                                                        <span className="text-sm text-zinc-600 mb-1">Hours</span>
                                                     </div>
-                                                    <span className="text-zinc-500 text-sm">{t.hours_per_day}h/day</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
+                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#F93A8B]/10 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Timeline</span>
+                                                    <div className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-end gap-2">
+                                                        {realWeeks}
+                                                        <span className="text-sm text-zinc-600 mb-1">Weeks</span>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
+                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <span className="text-[10px] uppercase font-black text-zinc-600 tracking-[0.2em] mb-4 block italic">Risk Buffer</span>
+                                                    <div className="text-4xl font-black text-emerald-600 uppercase italic tracking-tighter flex items-end gap-2">
+                                                        +{estimate.risk_buffer_percent || 20}%
+                                                    </div>
+                                                </div>
+                                            </header>
 
-                                    <div className="space-y-8">
-                                        <h3 className="font-black text-xl text-white uppercase italic tracking-tight">Phase Breakdown</h3>
-                                        <div className="space-y-4">
-                                            {estimate.phase_breakdown?.map((p: any, i: number) => (
-                                                <div key={i} className="flex items-center gap-6">
-                                                    <div className="w-32 text-[10px] font-black text-zinc-600 uppercase tracking-widest italic truncate">{p.phase}</div>
-                                                    <div className="flex-1 h-3 bg-[#1a1523] rounded-full overflow-hidden border border-[#261E2E]/50 shadow-inner">
-                                                        <div 
-                                                            className="h-full bg-[#F93A8B] rounded-full shadow-[0_0_12px_rgba(79,70,229,0.3)] transition-all duration-1000" 
-                                                            style={{ width: `${(p.hours / estimate.total_hours) * 100}%` }}
-                                                        />
+                                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+                                                <div className="space-y-6">
+                                                    <h3 className="font-bold text-lg">Team Allocation</h3>
+                                                    <div className="space-y-4">
+                                                        {displayTeam.map((t: any, i: number) => (
+                                                            <div key={i} className="flex items-center justify-between p-4 bg-[#1a1523] rounded-xl border border-[#261E2E]">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-[#e73681]/10 text-[#F93A8B]/80 flex items-center justify-center font-bold text-xs">
+                                                                        {t.name?.charAt(0) || '?'}
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="font-semibold text-sm block">{t.name}</span>
+                                                                        <span className="text-xs text-zinc-500">{t.role}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-zinc-500 text-sm">{t.hours_per_day}h/day</span>
+                                                            </div>
+                                                        ))}
+                                                        {displayTeam.length === 0 && (
+                                                            <p className="text-zinc-500 text-sm italic">No team members assigned yet. Assign tasks in the Milestones tab.</p>
+                                                        )}
                                                     </div>
-                                                    <div className="w-16 text-xs font-black text-white italic text-right">{p.hours}H</div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
+
+                                                <div className="space-y-8">
+                                                    <h3 className="font-black text-xl text-white uppercase italic tracking-tight">Milestone Breakdown</h3>
+                                                    <div className="space-y-4">
+                                                        {realPhaseBreakdown.map((p: any, i: number) => (
+                                                            <div key={i} className="flex items-center gap-6">
+                                                                <div className="w-32 text-[10px] font-black text-zinc-600 uppercase tracking-widest italic truncate">{p.phase}</div>
+                                                                <div className="flex-1 h-3 bg-[#1a1523] rounded-full overflow-hidden border border-[#261E2E]/50 shadow-inner">
+                                                                    <div
+                                                                        className="h-full bg-[#F93A8B] rounded-full shadow-[0_0_12px_rgba(79,70,229,0.3)] transition-all duration-1000"
+                                                                        style={{ width: `${realTotalHours > 0 ? (p.hours / realTotalHours) * 100 : 0}%` }}
+                                                                    />
+                                                                </div>
+                                                                <div className="w-16 text-xs font-black text-white italic text-right">{p.hours}H</div>
+                                                            </div>
+                                                        ))}
+                                                        {realPhaseBreakdown.length === 0 && (
+                                                            <p className="text-zinc-500 text-sm italic">No milestones with tasks yet.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         )}
 
@@ -838,6 +878,40 @@ export default function Show({ project, team, messages }: ProjectProps) {
                                                                         <h4 className="text-white font-black uppercase italic tracking-tight mb-1 text-xs md:text-sm">{member.name}</h4>
                                                                         <span className="text-[8px] md:text-[9px] font-black text-cyan-400 uppercase tracking-widest italic block mb-2 md:mb-3">{member.role}</span>
                                                                         <div className="text-2xl md:text-3xl font-black text-white italic tracking-tighter">{totalHours}H</div>
+
+                                                                        {/* On-the-fly reassignment dropdown */}
+                                                                        <div className="mt-4 pt-4 border-t border-[#261E2E]">
+                                                                            <label className="text-[9px] uppercase font-black text-zinc-600 tracking-widest italic block mb-2">Reassign To</label>
+                                                                            <div className="relative">
+                                                                                <select
+                                                                                    value={member.id}
+                                                                                    onChange={(e) => {
+                                                                                        const newMemberId = e.target.value;
+                                                                                        if (newMemberId && newMemberId !== member.id) {
+                                                                                            router.post(route('tasks.bulk-reassign'), {
+                                                                                                project_id: project.id,
+                                                                                                from_member_id: member.id,
+                                                                                                to_member_id: newMemberId,
+                                                                                                reason: `Reassigned from Resource Commitment: ${member.name} → ${team.find((m: any) => m.id === newMemberId)?.name || 'Unknown'}`,
+                                                                                            }, {
+                                                                                                preserveScroll: true,
+                                                                                                onSuccess: () => router.reload({ only: ['project', 'tasks'] }),
+                                                                                            });
+                                                                                        }
+                                                                                    }}
+                                                                                    className="w-full bg-[#15121a] border border-[#261E2E] rounded-xl px-3 py-2 text-xs text-zinc-300 focus:ring-2 focus:ring-cyan-400/40 focus:border-cyan-400/50 outline-none cursor-pointer hover:border-cyan-400/30 transition-colors appearance-none pr-8"
+                                                                                    style={{ backgroundImage: 'none' }}
+                                                                                >
+                                                                                    <option value={member.id} disabled>{member.name} (Current)</option>
+                                                                                    {team.filter((m: any) => m.id !== member.id).map((m: any) => (
+                                                                                        <option key={m.id} value={m.id}>{m.name} — {m.role}</option>
+                                                                                    ))}
+                                                                                </select>
+                                                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                                    <ChevronDown className="w-3 h-3 text-zinc-500" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 );
                                                             })
@@ -1297,85 +1371,133 @@ export default function Show({ project, team, messages }: ProjectProps) {
                             </div>
                         )}
 
-                        {/* Tasks Tab */}
-                        {activeTab === 'tasks' && (
+                        {/* Milestones Tab */}
+                        {activeTab === 'milestones' && (
                             <div className="space-y-12 animate-fade-in mb-24">
-                                <header className="flex items-center justify-between bg-[#15121a] p-10 rounded-[3rem] border border-[#261E2E] shadow-sm relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#F93A8B]/10 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 pointer-events-none" />
+                                <header className="flex items-center justify-between bg-[#15121a] p-10 rounded-[3rem] border border-[#261E2E] shadow-sm">
                                     <div>
-                                        <h2 className="text-4xl font-black mb-3 tracking-tighter text-white uppercase italic">Sync Board Alpha</h2>
-                                        <p className="text-zinc-500 font-bold italic tracking-tight border-l-4 border-[#F93A8B] pl-6">Granular developer units pending synchronization with the Neural Core</p>
-                                    </div>
-                                    <div className="flex gap-4 relative z-10">
-                                        {['todo', 'in_progress', 'review', 'done'].map(s => (
-                                            <div key={s} className="px-6 py-3 bg-[#0f0c13] rounded-2xl text-[10px] uppercase font-black text-zinc-600 border border-[#261E2E] italic tracking-widest flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${s === 'done' ? 'bg-emerald-500' : s === 'in_progress' ? 'bg-[#F93A8B] animate-pulse' : 'bg-zinc-700'}`} />
-                                                {s.replace('_', ' ')}: {tasks.filter((t:any) => t.status === s).length}
-                                            </div>
-                                        ))}
+                                        <h2 className="text-4xl font-black mb-3 tracking-tighter text-white uppercase italic">Milestones</h2>
+                                        <p className="text-zinc-500 font-bold italic tracking-tight border-l-4 border-[#F93A8B] pl-6">Track progress across project phases</p>
                                     </div>
                                 </header>
 
-                                <div className="grid grid-cols-1 gap-6">
-                                    {tasks.map((task: any, i: number) => (
-                                        <div key={task.id} className="bg-[#15121a] p-10 rounded-[2.5rem] border border-[#261E2E] shadow-sm hover:shadow-2xl transition-all group flex items-start gap-10 active:scale-[0.99] relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#0f0c13] rounded-full blur-2xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className={`mt-2 h-4 w-4 rounded-full shrink-0 border-4 border-white shadow-xl ${
-                                                task.priority === 'critical' ? 'bg-rose-500 shadow-rose-950/20 animate-pulse' :
-                                                task.priority === 'high' ? 'bg-amber-500 shadow-amber-950/20' : 'bg-[#F93A8B] shadow-[#F93A8B]/20'
-                                            }`} />
-                                            
-                                            <div className="flex-1 relative z-10">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <h4 className="text-xl font-black text-white uppercase italic tracking-tight group-hover:text-[#F93A8B] transition-colors">{task.title}</h4>
-                                                    <span className="px-3 py-1 bg-[#0f0c13] rounded-lg text-[9px] uppercase font-black text-zinc-600 tracking-[0.2em] italic border border-[#261E2E]">{task.phase}</span>
-                                                </div>
-                                                <p className="text-sm text-zinc-500 font-bold italic leading-relaxed line-clamp-1">{task.description}</p>
-                                            </div>
+                                <div className="space-y-6">
+                                    {project.milestones?.map((milestone: any, i: number) => {
+                                        const milestoneTasks = tasks.filter((t: any) => t.milestone_id === milestone.id);
+                                        const completedTasks = milestoneTasks.filter((t: any) => t.status === 'done').length;
+                                        const totalTasks = milestoneTasks.length;
+                                        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-                                            <div className="flex items-center gap-12 relative z-10">
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-black text-white italic tracking-tighter">{task.estimated_hours}H</div>
-                                                    <div className="text-[9px] text-zinc-600 uppercase font-black tracking-widest italic">Est. Committed</div>
+                                        return (
+                                            <div key={milestone.id} className="bg-[#15121a] rounded-[2.5rem] border border-[#261E2E] shadow-sm overflow-hidden">
+                                                <div className="p-8 pb-4">
+                                                    <div className="flex items-start justify-between mb-4">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <span className="text-[#F93A8B] font-bold text-sm">Phase {i + 1}</span>
+                                                                {milestone.deadline && (
+                                                                    <span className="flex items-center gap-1 text-xs text-zinc-500">
+                                                                        <Calendar className="w-3 h-3" />
+                                                                        {new Date(milestone.deadline).toLocaleDateString()}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <h3 className="text-xl font-bold text-white mb-2">{milestone.title}</h3>
+                                                            <p className="text-sm text-zinc-400 mb-3">{milestone.description}</p>
+                                                            {milestone.goal && (
+                                                                <p className="text-sm text-zinc-500 italic mb-3">Goal: {milestone.goal}</p>
+                                                            )}
+                                                            {milestone.deliverables && milestone.deliverables.length > 0 && (
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {milestone.deliverables.map((d: string, di: number) => (
+                                                                        <span key={di} className="px-2 py-1 bg-[#0f0c13] rounded-lg text-xs text-zinc-400 border border-[#261E2E]">
+                                                                            {d}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-right ml-6">
+                                                            <div className="text-2xl font-black text-white italic">{Math.round(progress)}%</div>
+                                                            <div className="text-[9px] text-zinc-600 uppercase font-black tracking-widest italic">{completedTasks}/{totalTasks} Tasks</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-2 bg-[#0f0c13] rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-[#F93A8B] rounded-full transition-all"
+                                                            style={{ width: `${progress}%` }}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="w-16 h-16 rounded-3xl bg-[#0f0c13] border-2 border-white shadow-xl flex items-center justify-center overflow-hidden group-hover:shadow-[#F93A8B]/20 transition-all" title={task.assignee?.name}>
-                                                    {task.assignee ? (
-                                                        <span className="text-sm font-black text-[#F93A8B] italic uppercase">{task.assignee.name.split(' ').map((n:any) => n[0]).join('')}</span>
-                                                    ) : <Users className="w-6 h-6 text-zinc-500" />}
-                                                </div>
+
+                                                {/* Tasks for this milestone */}
+                                                {milestoneTasks.length > 0 && (
+                                                    <div className="border-t border-[#261E2E]/60 mt-4">
+                                                        <div className="p-6 space-y-3">
+                                                            {milestoneTasks.map((task: any) => (
+                                                                <div key={task.id} className="flex items-center gap-4 p-4 bg-[#0f0c13] rounded-2xl border border-[#261E2E]/40 hover:border-[#261E2E] transition-all group">
+                                                                    <div className={`h-3 w-3 rounded-full shrink-0 border-2 border-white shadow-sm ${
+                                                                        task.priority === 'critical' ? 'bg-rose-500 shadow-rose-950/20' :
+                                                                        task.priority === 'high' ? 'bg-amber-500 shadow-amber-950/20' : 'bg-[#F93A8B] shadow-[#F93A8B]/20'
+                                                                    }`} />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <h4 className="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors truncate">{task.title}</h4>
+                                                                        <p className="text-[11px] text-zinc-600 italic truncate">{task.description}</p>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3 shrink-0">
+                                                                        <span className="text-xs font-black text-white italic">{task.estimated_hours}H</span>
+                                                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] uppercase font-black tracking-wider italic ${
+                                                                            task.status === 'done' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                                            task.status === 'in_progress' ? 'bg-[#F93A8B]/10 text-[#F93A8B]' :
+                                                                            'bg-zinc-700/30 text-zinc-500'
+                                                                        }`}>
+                                                                            {task.status.replace('_', ' ')}
+                                                                        </span>
+                                                                        {/* Reassignment dropdown - only when member assigned */}
+                                                                        {task.assignee ? (
+                                                                            <div className="relative">
+                                                                                <select
+                                                                                    value={task.assignee?.id || ''}
+                                                                                    onChange={(e) => {
+                                                                                        const memberId = e.target.value;
+                                                                                        if (memberId && memberId !== task.assignee?.id) {
+                                                                                            router.put(route('tasks.assign', task.id), {
+                                                                                                team_member_id: memberId,
+                                                                                                reason: 'Reassigned from project view',
+                                                                                            }, { preserveScroll: true });
+                                                                                        }
+                                                                                    }}
+                                                                                    className="bg-[#15121a] border border-[#261E2E] rounded-lg px-2 py-1 text-[10px] text-zinc-300 focus:ring-2 focus:ring-[#F93A8B]/40 focus:border-[#F93A8B]/50 outline-none cursor-pointer hover:border-[#F93A8B]/30 transition-colors appearance-none pr-6"
+                                                                                    style={{ backgroundImage: 'none' }}
+                                                                                >
+                                                                                    {team.filter((m: any) => m.stack === task.stack || m.stack === 'fullstack').map((member: any) => (
+                                                                                        <option key={member.id} value={member.id}>
+                                                                                            {member.name}
+                                                                                        </option>
+                                                                                    ))}
+                                                                                </select>
+                                                                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                                                    <ChevronDown className="w-2.5 h-2.5 text-zinc-500" />
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-[10px] text-zinc-600 italic">Unassigned</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
 
-                        {/* Team Tab */}
-                        {activeTab === 'team' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {team.map(member => (
-                                    <div key={member.id} className="bg-[#15121a] p-8 rounded-[2.5rem] border border-[#261E2E] shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden active:scale-95">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#F93A8B]/10 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <div className="flex items-center gap-6 mb-8 relative z-10">
-                                            <div className="w-16 h-16 rounded-2xl bg-[#F93A8B] flex items-center justify-center border-4 border-white shadow-xl shadow-[#F93A8B]/20 group-hover:rotate-6 transition-transform">
-                                                <span className="text-2xl font-black text-white italic">{member.name.charAt(0)}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <h4 className="text-xl font-black text-white uppercase italic tracking-tight">{member.name}</h4>
-                                                <p className="text-[10px] font-black text-[#F93A8B] uppercase tracking-widest italic">{member.role}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2.5 relative z-10">
-                                            {member.skills.map(s => (
-                                                <span key={s} className="px-3 py-1.5 bg-[#0f0c13] rounded-xl text-[10px] font-black text-zinc-500 border border-[#261E2E] uppercase tracking-widest italic group-hover:bg-[#15121a] group-hover:border-[#F93A8B]/20 transition-colors">
-                                                    {s}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        {/* Tasks Tab */}
+
                     </>
                 )}
             </div>
